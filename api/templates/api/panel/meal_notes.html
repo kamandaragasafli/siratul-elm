@@ -1,0 +1,225 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Məal qısa məlumat — Sirac{% endblock %}
+{% block subtitle %}Qurani Kərim məal — qısa məlumat və hökmlər{% endblock %}
+
+{% block content %}
+<div class="grid">
+  <div class="stat">
+    <div class="n">{{ stats.meal_notes }}</div>
+    <div class="l">Ümumi</div>
+  </div>
+  <div class="stat">
+    <div class="n">{{ stats.meal_notes_published }}</div>
+    <div class="l">Yayınlı</div>
+  </div>
+</div>
+
+<section class="form-panel">
+  <h2>{% if form_id %}Redaktə #{{ form_id }}{% else %}Yeni qısa məlumat{% endif %}</h2>
+  <p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.45">
+    Mətndə haşiyə üçün <code>[1]</code>, <code>[2]</code> yazın.
+    Hökm üçün haşiyə növünü «Hökm» seçin — tətbiqdə xüsusi nişanla açılır.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_meal_note" />
+    {% if form_id %}<input type="hidden" name="id" value="{{ form_id }}" />{% endif %}
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Səviyyə</label>
+        <select name="scope" id="meal-scope">
+          <option value="surah" {% if form_scope == 'surah' %}selected{% endif %}>Surə</option>
+          <option value="ayah" {% if form_scope == 'ayah' %}selected{% endif %}>Ayə</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Surə</label>
+        <select name="surah" required>
+          <option value="">— seçin —</option>
+          {% for s in surah_choices %}
+          <option value="{{ s.id }}" {% if form_surah == s.id %}selected{% endif %}>{{ s.nameAz }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" id="ayah-field">
+        <label>Ayə №</label>
+        <input type="text" name="ayah" value="{{ form_ayah }}" placeholder="255" />
+      </div>
+      <div class="field">
+        <label>Müəllif</label>
+        <input type="text" name="author" value="{{ form_author }}" placeholder="Yunus Alihuseynli" />
+      </div>
+      <div class="field full">
+        <label>Əsas mesaj</label>
+        <textarea name="message" style="min-height:90px">{{ form_message }}</textarea>
+      </div>
+    </div>
+
+    <div style="margin-top:18px">
+      <h2 style="margin-bottom:8px">Haşiyələr / hökmlər</h2>
+      <div id="fn-rows">
+        {% for fn in form_footnotes %}
+        <div class="form-grid fn-row" style="margin-bottom:10px;align-items:end">
+          <div class="field" style="max-width:80px">
+            <label>№</label>
+            <input type="text" name="fn_n" value="{{ fn.n }}" />
+          </div>
+          <div class="field">
+            <label>Növ</label>
+            <select name="fn_kind">
+              <option value="note" {% if fn.kind != 'hukm' %}selected{% endif %}>Qeyd</option>
+              <option value="hukm" {% if fn.kind == 'hukm' %}selected{% endif %}>Hökm</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>Mətn</label>
+            <textarea name="fn_text" style="min-height:64px">{{ fn.text }}</textarea>
+          </div>
+        </div>
+        {% empty %}
+        <div class="form-grid fn-row" style="margin-bottom:10px;align-items:end">
+          <div class="field" style="max-width:80px">
+            <label>№</label>
+            <input type="text" name="fn_n" value="1" />
+          </div>
+          <div class="field">
+            <label>Növ</label>
+            <select name="fn_kind">
+              <option value="note">Qeyd</option>
+              <option value="hukm">Hökm</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>Mətn</label>
+            <textarea name="fn_text" style="min-height:64px" placeholder="Boş buraxsanız bu sətir saxlanılmır"></textarea>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn" id="fn-add" style="background:rgba(255,255,255,0.12);color:var(--text);margin-top:4px">
+        + Haşiyə / hökm
+      </button>
+    </div>
+
+    <div class="actions">
+      <label class="check">
+        <input type="checkbox" name="is_published" {% if form_published %}checked{% endif %} />
+        Tətbiqdə göstər (yayınlı)
+      </label>
+      <button class="btn" type="submit">Saxla</button>
+      {% if form_id %}
+      <a class="btn" href="{% url 'panel-meal-notes' %}" style="background:rgba(255,255,255,0.12);color:var(--text);text-decoration:none">Yenisini yaz</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Mövcud qeydlər</h2>
+  {% if notes %}
+  <table>
+    <thead>
+      <tr>
+        <th>Yer</th>
+        <th>Mesaj</th>
+        <th>Haşiyə</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for n in notes %}
+      <tr>
+        <td>
+          <strong>{% if n.ayah %}{{ n.surah_label }} — ayə {{ n.ayah }}{% else %}{{ n.surah_label }}{% endif %}</strong>
+          <div class="muted" style="font-size:11px">{{ n.get_scope_display }}</div>
+        </td>
+        <td style="max-width:320px">
+          {% if n.message %}<div>{{ n.message|truncatechars:100 }}</div>{% endif %}
+          {% if n.author %}<div class="muted" style="font-size:11px;margin-top:4px">{{ n.author }}</div>{% endif %}
+        </td>
+        <td class="muted">{{ n.footnotes|length }}</td>
+        <td>
+          <span class="badge {% if not n.is_published %}off{% endif %}">
+            {% if n.is_published %}yayınlı{% else %}gizli{% endif %}
+          </span>
+        </td>
+        <td style="white-space:nowrap">
+          <a href="?edit={{ n.id }}">Redaktə</a>
+          <form class="inline-form" method="post" style="margin-left:8px">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle_meal_note" />
+            <input type="hidden" name="id" value="{{ n.id }}" />
+            <button class="btn" type="submit" style="padding:6px 10px;font-size:12px;background:rgba(255,255,255,0.12);color:var(--text)">
+              {% if n.is_published %}Gizlət{% else %}Yayınla{% endif %}
+            </button>
+          </form>
+          <form class="inline-form" method="post" onsubmit="return confirm('Silinsin?');" style="margin-left:4px">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_meal_note" />
+            <input type="hidden" name="id" value="{{ n.id }}" />
+            <button class="btn btn-danger" type="submit">Sil</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Hələ qeyd yoxdur.</p>
+  {% endif %}
+</section>
+
+<template id="fn-row-tpl">
+  <div class="form-grid fn-row" style="margin-bottom:10px;align-items:end">
+    <div class="field" style="max-width:80px">
+      <label>№</label>
+      <input type="text" name="fn_n" value="" />
+    </div>
+    <div class="field">
+      <label>Növ</label>
+      <select name="fn_kind">
+        <option value="note">Qeyd</option>
+        <option value="hukm">Hökm</option>
+      </select>
+    </div>
+    <div class="field full">
+      <label>Mətn</label>
+      <textarea name="fn_text" style="min-height:64px"></textarea>
+    </div>
+  </div>
+</template>
+
+<script>
+(function () {
+  var scope = document.getElementById('meal-scope');
+  var ayahField = document.getElementById('ayah-field');
+  function syncAyah() {
+    if (!scope || !ayahField) return;
+    ayahField.style.display = scope.value === 'ayah' ? '' : 'none';
+  }
+  if (scope) {
+    scope.addEventListener('change', syncAyah);
+    syncAyah();
+  }
+
+  var addBtn = document.getElementById('fn-add');
+  var rows = document.getElementById('fn-rows');
+  var tpl = document.getElementById('fn-row-tpl');
+  if (addBtn && rows && tpl) {
+    addBtn.addEventListener('click', function () {
+      var node = tpl.content.cloneNode(true);
+      var inputs = node.querySelectorAll('input[name="fn_n"]');
+      var max = 0;
+      rows.querySelectorAll('input[name="fn_n"]').forEach(function (el) {
+        var v = parseInt(el.value, 10);
+        if (!isNaN(v) && v > max) max = v;
+      });
+      if (inputs[0]) inputs[0].value = String(max + 1);
+      rows.appendChild(node);
+    });
+  }
+})();
+</script>
+{% endblock %}

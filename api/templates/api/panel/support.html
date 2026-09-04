@@ -1,0 +1,81 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Dəstək — Sirac{% endblock %}
+{% block subtitle %}Dəstək mesajları{% endblock %}
+
+{% block content %}
+<div class="grid">
+  <div class="stat">
+    <div class="n">{{ stats.support }}</div>
+    <div class="l">Ümumi</div>
+  </div>
+  <div class="stat">
+    <div class="n">{{ stats.support_unread }}</div>
+    <div class="l">Oxunmamış</div>
+  </div>
+</div>
+
+<div class="nav" style="margin-bottom:16px">
+  <a href="?filter=all" class="{% if filter == 'all' %}active{% endif %}">Hamısı</a>
+  <a href="?filter=unread" class="{% if filter == 'unread' %}active{% endif %}">Oxunmamış</a>
+  <a href="?filter=read" class="{% if filter == 'read' %}active{% endif %}">Oxunmuş</a>
+</div>
+
+<section class="panel">
+  <h2>Mesajlar</h2>
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Tarix</th>
+        <th>Ad</th>
+        <th>Kateqoriya</th>
+        <th>Mesaj</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in items %}
+      <tr>
+        <td class="muted" style="white-space:nowrap">{{ m.created_at|date:"d.m.Y H:i" }}</td>
+        <td>
+          <strong>{{ m.name }}</strong>
+          {% if m.contact %}<div class="muted" style="font-size:12px">{{ m.contact }}</div>{% endif %}
+          {% if m.app_version %}<div class="muted" style="font-size:11px">v{{ m.app_version }}</div>{% endif %}
+        </td>
+        <td>
+          <span class="badge {% if not m.is_read %}off{% endif %}">{{ m.get_category_display }}</span>
+          {% if not m.is_read %}<div class="muted" style="font-size:11px;margin-top:4px">yeni</div>{% endif %}
+        </td>
+        <td style="max-width:360px;white-space:pre-wrap">{{ m.message }}</td>
+        <td style="white-space:nowrap">
+          {% if not m.is_read %}
+          <form class="inline-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_read" />
+            <input type="hidden" name="id" value="{{ m.id }}" />
+            <button class="btn" type="submit" style="padding:6px 10px;font-size:12px">Oxudum</button>
+          </form>
+          {% else %}
+          <form class="inline-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_unread" />
+            <input type="hidden" name="id" value="{{ m.id }}" />
+            <button class="btn" type="submit" style="padding:6px 10px;font-size:12px;background:rgba(255,255,255,0.12);color:var(--text)">Oxunmamış</button>
+          </form>
+          {% endif %}
+          <form class="inline-form" method="post" onsubmit="return confirm('Silinsin?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete" />
+            <input type="hidden" name="id" value="{{ m.id }}" />
+            <button class="btn btn-danger" type="submit">Sil</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Mesaj yoxdur.</p>
+  {% endif %}
+</section>
+{% endblock %}

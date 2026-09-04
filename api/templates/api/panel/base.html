@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Sirac{% endblock %}</title>
+  <style>
+    :root {
+      --ink: #0b1520;
+      --ink-soft: #142433;
+      --mist: #1c3344;
+      --brass: #c4a15a;
+      --sage: #6b8f7a;
+      --text: #e9e4d8;
+      --muted: #9aa8b5;
+      --danger: #c45c4a;
+      --line: rgba(233, 228, 216, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(165deg, var(--ink) 0%, var(--ink-soft) 55%, var(--mist) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    a { color: var(--brass); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 48px; }
+    header {
+      display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+      gap: 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line);
+    }
+    .brand { font-size: 26px; font-weight: 700; letter-spacing: 0.02em; }
+    .brand span { color: var(--brass); }
+    .meta { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav a {
+      display: inline-block; padding: 8px 12px; border-radius: 8px;
+      background: rgba(196, 161, 90, 0.1); border: 1px solid rgba(196, 161, 90, 0.25);
+      text-decoration: none; font-size: 13px; font-weight: 600; color: var(--text);
+    }
+    .nav a:hover, .nav a.active {
+      background: rgba(196, 161, 90, 0.22); color: var(--brass); text-decoration: none;
+    }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px; margin-bottom: 28px;
+    }
+    .stat {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+      border-radius: 12px; padding: 16px;
+    }
+    .stat .n { font-size: 28px; font-weight: 700; color: var(--brass); line-height: 1.1; }
+    .stat .l { margin-top: 6px; font-size: 13px; color: var(--muted); }
+    .stat .sub { margin-top: 4px; font-size: 12px; color: var(--sage); }
+    .cards {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px;
+    }
+    .card {
+      display: block; background: rgba(255,255,255,0.035); border: 1px solid var(--line);
+      border-radius: 14px; padding: 18px; text-decoration: none; color: inherit;
+    }
+    .card:hover { border-color: rgba(196,161,90,0.45); text-decoration: none; }
+    .card h3 { margin: 0 0 8px; font-size: 16px; color: var(--brass); }
+    .card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .panel, .form-panel {
+      background: rgba(255,255,255,0.035); border: 1px solid var(--line);
+      border-radius: 14px; padding: 18px 20px 20px; margin-bottom: 20px;
+    }
+    .panel h2, .form-panel h2, .page-title {
+      margin: 0 0 14px; font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--sage); font-weight: 600;
+    }
+    .page-title { font-size: 15px; color: var(--text); text-transform: none; letter-spacing: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td {
+      text-align: left; padding: 10px 4px; border-bottom: 1px solid var(--line); vertical-align: top;
+    }
+    th {
+      color: var(--muted); font-weight: 600; font-size: 12px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .muted { color: var(--muted); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      background: rgba(107,143,122,0.18); color: var(--sage);
+    }
+    .badge.off { background: rgba(196,92,74,0.18); color: var(--danger); }
+    .empty { color: var(--muted); font-size: 14px; padding: 12px 0 16px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+    @media (max-width: 800px) { .form-grid { grid-template-columns: 1fr; } }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .field input[type="text"],
+    .field input[type="url"],
+    .field select,
+    .field textarea {
+      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+      background: rgba(0,0,0,0.25); color: var(--text); font-size: 14px;
+    }
+    .field textarea {
+      min-height: 320px; font-family: Consolas, "Courier New", monospace;
+      line-height: 1.45; resize: vertical;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: rgba(196,161,90,0.55);
+    }
+    .field select option { background: #142433; }
+    .check {
+      display: flex; align-items: center; gap: 8px; margin-top: 4px;
+      font-size: 14px; color: var(--text);
+    }
+    .actions {
+      margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    }
+    .btn {
+      appearance: none; border: none; cursor: pointer; padding: 11px 18px; border-radius: 8px;
+      background: var(--brass); color: var(--ink); font-weight: 700; font-size: 14px;
+    }
+    .btn:hover { filter: brightness(1.06); }
+    .btn-danger {
+      background: rgba(196,92,74,0.85); color: #fff; padding: 6px 10px; font-size: 12px;
+    }
+    .inline-form { display: inline; margin: 0; }
+    .alert { margin-bottom: 14px; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+    .alert.err {
+      background: rgba(196,92,74,0.18); border: 1px solid rgba(196,92,74,0.35); color: #efb4aa;
+    }
+    .alert.ok {
+      background: rgba(107,143,122,0.18); border: 1px solid rgba(107,143,122,0.35); color: #b7d4c3;
+    }
+    .alert.warn {
+      background: rgba(196,161,90,0.15); border: 1px solid rgba(196,161,90,0.35); color: #e6d3a3;
+    }
+    footer { margin-top: 28px; color: var(--muted); font-size: 12px; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
+    .fmt-bar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-bottom: 8px;
+    }
+    .fmt-btn {
+      appearance: none; border: 1px solid var(--line); cursor: pointer;
+      min-width: 40px; height: 36px; padding: 0 12px; border-radius: 8px;
+      background: rgba(0,0,0,0.28); color: var(--text); font-size: 15px; font-weight: 700;
+    }
+    .fmt-btn:hover { border-color: rgba(196,161,90,0.55); color: var(--brass); }
+    .fmt-btn.italic { font-style: italic; font-weight: 600; }
+    .fmt-btn.ai-btn {
+      min-width: 36px; padding: 0 10px; font-size: 16px;
+      border-color: rgba(107,143,122,0.45); color: var(--sage);
+    }
+    .fmt-btn.ai-btn:hover:not(:disabled) {
+      border-color: rgba(107,143,122,0.75); color: #b7d4c3;
+      box-shadow: 0 0 0 1px rgba(107,143,122,0.25);
+    }
+    .fmt-btn.ai-btn:disabled { opacity: 0.55; cursor: wait; }
+    .fmt-hint { font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="brand">Sirac</div>
+        <div class="meta">{% block subtitle %}Panel{% endblock %} · {{ now|date:"d.m.Y H:i" }}</div>
+      </div>
+      <nav class="nav">
+        <a href="{% url 'panel-home' %}" class="{% if nav == 'home' %}active{% endif %}">Ana</a>
+        <a href="{% url 'panel-books' %}" class="{% if nav == 'books' %}active{% endif %}">Kitablar</a>
+        <a href="{% url 'panel-chapters' %}" class="{% if nav == 'chapters' %}active{% endif %}">Fəsillər</a>
+        <a href="{% url 'panel-channels' %}" class="{% if nav == 'channels' %}active{% endif %}">Kanallar</a>
+        <a href="{% url 'panel-lessons' %}" class="{% if nav == 'lessons' %}active{% endif %}">Dərslər</a>
+        <a href="{% url 'panel-live-lessons' %}" class="{% if nav == 'live-lessons' %}active{% endif %}">Canlı</a>
+        <a href="{% url 'panel-meal-notes' %}" class="{% if nav == 'meal-notes' %}active{% endif %}">Məal qeyd</a>
+        <a href="{% url 'panel-support' %}" class="{% if nav == 'support' %}active{% endif %}">Dəstək</a>
+        <a href="{% url 'panel-logout' %}">Çıxış</a>
+      </nav>
+    </header>
+
+    {% if messages %}
+      {% for message in messages %}
+      <div class="alert {% if 'error' in message.tags %}err{% elif 'warning' in message.tags %}warn{% else %}ok{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
+    {% if form_error %}
+    <div class="alert err">{{ form_error }}</div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <footer>Staff panel · Django admin istifadə olunmur</footer>
+  </div>
+</body>
+</html>

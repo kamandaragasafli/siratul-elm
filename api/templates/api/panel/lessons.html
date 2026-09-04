@@ -1,0 +1,98 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Dərslər — Sirac{% endblock %}
+{% block subtitle %}Dərslər{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Dərslər</h1>
+
+<section class="form-panel">
+  <h2>Yeni dərs yarat</h2>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create_lesson" />
+    <div class="form-grid">
+      <div class="field full">
+        <label for="series_id">Silsilə</label>
+        <select id="series_id" name="series_id" required>
+          <option value="">— seçin —</option>
+          {% for s in series_choices %}
+          <option value="{{ s.id }}">
+            {{ s.channel.name }} — {{ s.title }}{% if not s.is_published %} (gizli){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field full">
+        <label for="url">YouTube video linki</label>
+        <input id="url" name="url" type="url" required placeholder="https://www.youtube.com/watch?v=..." />
+      </div>
+      <div class="field full">
+        <label for="title">Başlıq (boş — avtomatik)</label>
+        <input id="title" name="title" type="text" placeholder="Dərs adı" />
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="is_published" checked /> Yayınlı olsun
+        </label>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Dərs əlavə et</button>
+    </div>
+  </form>
+</section>
+
+<section class="form-panel">
+  <h2>Silsilədən dərs sil</h2>
+  <p class="muted" style="margin:0 0 14px;font-size:13px">Silsilə silinmir — yalnız seçdiyiniz dərs silinir.</p>
+
+  <form method="get" class="form-grid" style="margin-bottom:14px">
+    <div class="field full">
+      <label for="pick_series">Silsilə seçin</label>
+      <select id="pick_series" name="series" onchange="this.form.submit()">
+        <option value="">— seçin —</option>
+        {% for s in series_choices %}
+        <option value="{{ s.id }}"{% if selected_series_id == s.id|stringformat:"s" %} selected{% endif %}>
+          {{ s.channel.name }} — {{ s.title }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  {% if selected_series %}
+    {% if series_lessons %}
+    <table>
+      <thead>
+        <tr><th>#</th><th>Dərs</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for l in series_lessons %}
+        <tr>
+          <td class="muted">{{ l.order }}</td>
+          <td>{{ l.title|truncatechars:70 }}</td>
+          <td>
+            {% if l.is_published %}<span class="badge">Yayınlı</span>
+            {% else %}<span class="badge off">Gizli</span>{% endif %}
+          </td>
+          <td>
+            <form method="post" class="inline-form"
+                  onsubmit="return confirm('«{{ l.title|escapejs }}» silinsin? Silsilə qalacaq.');">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_lesson" />
+              <input type="hidden" name="lesson_id" value="{{ l.id }}" />
+              <button type="submit" class="btn btn-danger">Sil</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Bu silsilədə dərs yoxdur.</p>
+    {% endif %}
+  {% else %}
+  <p class="empty">Dərsləri görmək üçün silsilə seçin.</p>
+  {% endif %}
+</section>
+{% endblock %}

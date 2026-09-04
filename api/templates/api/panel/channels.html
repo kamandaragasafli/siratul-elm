@@ -1,0 +1,92 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Kanallar — Sirac{% endblock %}
+{% block subtitle %}Kanallar{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Kanallar</h1>
+
+<section class="form-panel">
+  <h2>Yeni kanal yarat</h2>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create_channel" />
+    <div class="form-grid">
+      <div class="field full">
+        <label for="channel_url">Kanal / playlists linki</label>
+        <input id="channel_url" name="url" type="url" required
+               placeholder="https://www.youtube.com/@Kanal/playlists" />
+      </div>
+      <div class="field full">
+        <label for="channel_name">Kanal adı (boş — avtomatik)</label>
+        <input id="channel_name" name="name" type="text" placeholder="Kanal adı" />
+      </div>
+      <div class="field full">
+        <label for="channel_desc">Qısa təsvir</label>
+        <input id="channel_desc" name="description" type="text" placeholder="Təsvir" />
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="is_published" checked /> Yayınlı olsun
+        </label>
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="sync_playlists" checked /> Playlistləri silsilə kimi yüklə
+        </label>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Kanal əlavə et</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Kanal siyahısı</h2>
+  {% if channels_list %}
+  <table>
+    <thead>
+      <tr>
+        <th>Ad</th>
+        <th>Silsilə</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in channels_list %}
+      <tr>
+        <td>
+          <div>{{ c.name }}</div>
+          <div class="muted" style="font-size:12px;word-break:break-all">{{ c.url|truncatechars:60 }}</div>
+        </td>
+        <td class="muted">{{ c.series_count }}</td>
+        <td>
+          {% if c.is_published %}<span class="badge">Yayınlı</span>
+          {% else %}<span class="badge off">Gizli</span>{% endif %}
+        </td>
+        <td style="white-space:nowrap">
+          <form method="post" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="sync_channel" />
+            <input type="hidden" name="channel_id" value="{{ c.id }}" />
+            <button type="submit" class="btn" style="padding:6px 10px;font-size:12px">Playlist yenilə</button>
+          </form>
+          <form method="post" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle_channel" />
+            <input type="hidden" name="channel_id" value="{{ c.id }}" />
+            <button type="submit" class="btn btn-danger" style="background:rgba(196,161,90,0.35);color:var(--text)">
+              {% if c.is_published %}Gizlət{% else %}Yayınla{% endif %}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Kanal yoxdur.</p>
+  {% endif %}
+</section>
+{% endblock %}

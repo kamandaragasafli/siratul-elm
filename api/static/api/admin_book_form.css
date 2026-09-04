@@ -1,0 +1,86 @@
+/* Kitab əlavə/redaktə — daha oxunaqlı admin formu */
+.book-admin-guide {
+  max-width: 920px;
+  margin: 0 0 22px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #1a2836 0%, #243447 100%);
+  border: 1px solid rgba(196, 161, 90, 0.4);
+  border-radius: 10px;
+  color: #e9e4d8;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.book-admin-guide h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #c4a15a;
+}
+
+.book-admin-guide ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.book-admin-guide li {
+  margin-bottom: 6px;
+}
+
+.book-admin-guide .hint {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  color: #9aa8b5;
+}
+
+.book-admin-guide .required-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: rgba(196, 161, 90, 0.2);
+  color: #c4a15a;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Fieldset başlıqları */
+form .module h2,
+form fieldset.module h2 {
+  font-size: 15px;
+}
+
+form fieldset.module .description {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: #f8f4ec;
+  border-left: 4px solid #c4a15a;
+  border-radius: 0 6px 6px 0;
+  color: #3d3428;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+html[data-theme="dark"] form fieldset.module .description {
+  background: #2a3441;
+  color: #d4dce4;
+}
+
+/* Fəsil inline */
+.inline-group .inline-related h3 {
+  font-size: 14px;
+}
+
+.inline-group .stacked .form-row textarea {
+  min-height: 280px;
+}
+
+.inline-group .stacked .form-row label[for*="title"]::after {
+  content: " *";
+  color: #ba2121;
+  font-weight: bold;
+}

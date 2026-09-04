@@ -1,0 +1,456 @@
+/* Quill — Word tipli fəsil redaktoru */
+.chapter-editor-wrap {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.chapter-editor-wrap .ql-toolbar.ql-snow {
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.chapter-editor-wrap .ql-container.ql-snow {
+  border: none;
+  min-height: 420px;
+  font-family: "Segoe UI", Georgia, serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.chapter-editor-wrap .ql-editor {
+  min-height: 420px;
+  color: var(--text);
+  padding: 16px 18px 24px;
+}
+
+/* Word/PDF-dən yapışdırılan qara mətn — inline rəngi ləğv et */
+.chapter-editor-wrap .ql-editor,
+.chapter-editor-wrap .ql-editor * {
+  color: var(--text) !important;
+  background-color: transparent !important;
+}
+
+.chapter-editor-wrap .ql-editor.ql-blank::before {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.chapter-editor-wrap .ql-snow .ql-stroke {
+  stroke: var(--muted);
+}
+
+.chapter-editor-wrap .ql-snow .ql-fill {
+  fill: var(--muted);
+}
+
+.chapter-editor-wrap .ql-snow .ql-picker {
+  color: var(--text);
+}
+
+.chapter-editor-wrap .ql-snow .ql-picker-options {
+  background: #142433;
+  border-color: var(--line);
+}
+
+.chapter-editor-wrap .ql-snow .ql-picker-label:hover,
+.chapter-editor-wrap .ql-snow .ql-picker-label.ql-active,
+.chapter-editor-wrap .ql-snow button:hover,
+.chapter-editor-wrap .ql-snow button.ql-active {
+  color: var(--brass);
+}
+
+.chapter-editor-wrap .ql-snow button:hover .ql-stroke,
+.chapter-editor-wrap .ql-snow button.ql-active .ql-stroke,
+.chapter-editor-wrap .ql-snow .ql-picker-label:hover .ql-stroke {
+  stroke: var(--brass);
+}
+
+.chapter-editor-wrap .ql-snow button:hover .ql-fill,
+.chapter-editor-wrap .ql-snow button.ql-active .ql-fill {
+  fill: var(--brass);
+}
+
+.chapter-editor-wrap .ql-editor h1 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin: 1.1em 0 0.45em;
+}
+
+.chapter-editor-wrap .ql-editor h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-style: italic;
+  margin: 0.9em 0 0.35em;
+}
+
+.chapter-editor-wrap .ql-editor blockquote {
+  border-left: 3px solid var(--brass);
+  margin: 0.6em 0;
+  padding: 0.2em 0 0.2em 14px;
+  font-style: italic;
+  opacity: 0.95;
+}
+
+.editor-toolbar-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.editor-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* Redaktor + mobil önizləmə yan-yana */
+.editor-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.editor-pane {
+  min-width: 0;
+}
+
+.preview-pane {
+  position: sticky;
+  top: 12px;
+}
+
+.preview-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.preview-badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sage);
+}
+
+.preview-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.phone-frame {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 10px 8px 12px;
+  border-radius: 28px;
+  background: linear-gradient(165deg, #2a2a2e 0%, #121214 100%);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.06),
+    0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.phone-speaker {
+  width: 56px;
+  height: 5px;
+  margin: 0 auto 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.phone-home {
+  width: 42px;
+  height: 4px;
+  margin: 10px auto 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.phone-screen {
+  height: min(560px, 62vh);
+  overflow: auto;
+  border-radius: 18px;
+  background: #f4efe4;
+  color: #1a2430;
+  padding: 14px 15px 18px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Sirac oxucu — kağız tema (default) */
+.reader-preview-inner.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.rp-chapter-title {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0 0 14px;
+  color: #1a2430;
+}
+
+.rp-h1 {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 18px 0 8px;
+  color: #1a2430;
+}
+
+.rp-h1:first-child {
+  margin-top: 0;
+}
+
+.rp-h2 {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1.4;
+  margin: 14px 0 6px;
+  color: #1a2430;
+}
+
+.rp-p {
+  margin: 0 0 10px;
+  text-align: left;
+}
+
+.rp-p.align-center {
+  text-align: center;
+}
+
+.rp-p.align-right {
+  text-align: right;
+}
+
+.rp-p.align-justified {
+  text-align: justify;
+}
+
+.rp-quote {
+  margin: 8px 0 12px;
+  padding: 2px 0 2px 12px;
+  border-left: 3px solid #c4a15a;
+  font-style: italic;
+  opacity: 0.95;
+}
+
+.reader-preview-inner.rtl .rp-quote {
+  border-left: none;
+  border-right: 3px solid #c4a15a;
+  padding: 2px 12px 2px 0;
+}
+
+.rp-list-item {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 8px;
+  align-items: flex-start;
+}
+
+.rp-list-marker {
+  flex-shrink: 0;
+  min-width: 18px;
+  color: #8f7540;
+  font-weight: 600;
+}
+
+.rp-list-body {
+  flex: 1;
+}
+
+.rp-empty {
+  margin: 0;
+  color: #5a6672;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.rp-footnotes {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(26, 36, 48, 0.15);
+}
+
+.rp-fn-title {
+  font-size: 12px;
+  font-weight: 600;
+  font-style: italic;
+  color: #5a6672;
+  margin-bottom: 8px;
+}
+
+.rp-fn-item {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5a6672;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.rp-fn-num {
+  color: var(--accent, #c4a15a);
+  font-weight: 700;
+}
+
+.rp-fn-ref {
+  color: #c4a15a;
+  font-weight: 700;
+  font-size: 0.82em;
+  vertical-align: super;
+  line-height: 0;
+}
+
+.footnotes-panel {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.footnotes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.footnotes-head label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sage);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#footnote_heading {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.fn-help {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.fn-row {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.fn-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.fn-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.fn-num-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brass);
+}
+
+.fn-num-input {
+  width: 72px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fn-row label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brass);
+  margin-bottom: 6px;
+}
+
+.fn-row-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fn-row textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.fmt-btn.fn-mini {
+  min-width: auto;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fmt-btn.fn-del {
+  background: rgba(196, 92, 74, 0.25);
+  color: #efb4aa;
+}
+
+@media (max-width: 1100px) {
+  .editor-split {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-pane {
+    position: static;
+    order: 2;
+    margin-top: 8px;
+  }
+
+  .phone-screen {
+    height: 420px;
+  }
+}

@@ -1,0 +1,163 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Fəsillər — Sirac{% endblock %}
+{% block subtitle %}Fəsil düzəlt{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Fəsil mətnini düzəlt</h1>
+
+<section class="form-panel">
+  <form method="get" class="form-grid" style="margin-bottom:14px">
+    <div class="field full">
+      <label for="pick_book">Kitab</label>
+      <select id="pick_book" name="book" onchange="this.form.submit()">
+        <option value="">— kitab seçin —</option>
+        {% for b in book_choices %}
+        <option value="{{ b.id }}"{% if selected_book_id == b.id|stringformat:"s" %} selected{% endif %}>
+          {{ b.title|truncatechars:80 }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  {% if selected_book %}
+    {% if book_chapters %}
+    <table style="margin-bottom:16px">
+      <thead>
+        <tr><th>#</th><th>Fəsil</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for ch in book_chapters %}
+        <tr{% if edit_chapter and edit_chapter.id == ch.id %} style="background:rgba(196,161,90,0.08)"{% endif %}>
+          <td class="muted">{{ ch.order }}</td>
+          <td>{{ ch.title|truncatechars:70 }}</td>
+          <td>
+            <a href="{% url 'panel-chapters' %}?book={{ selected_book.id }}&amp;chapter={{ ch.id }}">Düzəlt</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Bu kitabda fəsil yoxdur.</p>
+    {% endif %}
+
+    <div class="form-panel" style="margin:0 0 16px;padding:14px 16px">
+      <h2>Yeni fəsil əlavə et</h2>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_chapter" />
+        <input type="hidden" name="book_id" value="{{ selected_book.id }}" />
+        <div class="form-grid">
+          <div class="field full">
+            <label for="new_ch_title">Başlıq</label>
+            <input id="new_ch_title" name="title" type="text" required placeholder="Fəsil adı" />
+          </div>
+          <div class="field full">
+            <label for="new_ch_content">Mətn</label>
+            <textarea id="new_ch_content" name="content" rows="6" placeholder="Fəsil mətni…"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn">Fəsil əlavə et</button>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if edit_chapter %}
+  <form method="post" id="chapter-edit-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_chapter" />
+    <input type="hidden" name="chapter_id" value="{{ edit_chapter.id }}" />
+    <div class="form-grid">
+      <div class="field full">
+        <label>Kitab</label>
+        <div class="muted" style="font-size:14px">{{ edit_chapter.book.title }}</div>
+      </div>
+      <div class="field full">
+        <label for="chapter_title">Fəsil başlığı</label>
+        <input id="chapter_title" name="title" type="text" required value="{{ edit_chapter.title }}" />
+      </div>
+      <div class="field full">
+        <label for="chapter_content">Mətn</label>
+        <div class="editor-toolbar-extra">
+          <button
+            type="button"
+            class="fmt-btn ai-btn"
+            id="fmt-ai"
+            title="AI ilə orfoqrafiya və format səhvlərini düzəlt"
+            aria-label="AI ilə düzəlt"
+            data-url="{% url 'panel-chapter-ai-fix' %}"
+            data-lang="{{ edit_chapter.book.language|default:'az' }}"
+          >✦</button>
+          <button type="button" class="fmt-btn" id="fn-insert" title="Mətndə istinad [1] əlavə et">[1]</button>
+          <span class="editor-hint">Word · ✦ AI · [1] istinad · qeydlər aşağıda</span>
+        </div>
+        {{ editor_html|json_script:"chapter-editor-html" }}
+        <input type="hidden" name="content_html" id="content_html" value="" />
+        <div
+          class="editor-split"
+          data-preview-url="{% url 'panel-chapter-preview' %}"
+          data-book-lang="{{ edit_chapter.book.language|default:'az' }}"
+        >
+          <div class="editor-pane">
+            <div class="chapter-editor-wrap">
+              <div id="chapter-editor"></div>
+            </div>
+          </div>
+          <aside class="preview-pane" aria-label="Mobil önizləmə">
+            <div class="preview-head">
+              <span class="preview-badge">📱 Mobil önizləmə</span>
+              <span class="preview-note">Sirac tətbiqində belə görünəcək</span>
+            </div>
+            <div class="phone-frame">
+              <div class="phone-speaker" aria-hidden="true"></div>
+              <div class="phone-screen" id="mobile-preview">
+                <p class="rp-empty">Yüklənir…</p>
+              </div>
+              <div class="phone-home" aria-hidden="true"></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+      <div class="footnotes-panel" data-fn-suggest="{{ footnote_next_suggest|default:1 }}">
+        <div class="footnotes-head">
+          <label for="footnote_heading">Qeydlər və istinadlar</label>
+          <button type="button" class="fmt-btn" id="fn-add" title="Yeni qeyd">+ Qeyd</button>
+        </div>
+        <input
+          type="text"
+          id="footnote_heading"
+          name="footnote_heading"
+          value="{{ footnote_heading|default:'Qeydlər və istinadlar' }}"
+          placeholder="Bölmə adı (məs: Qeydlər və istinadlar)"
+        />
+        <p class="fn-help">
+          <strong>№</strong> sütununda qeyd nömrəsini özünüz yazın — fəsil dəyişəndə 1-dən başlamır;
+          kitab üzrə davam edin (məs: əvvəlki fəsildə [12] bitibsə, burada <strong>13</strong>).
+          Yeni qeyd üçün təklif: <strong>[{{ footnote_next_suggest|default:1 }}]</strong>.
+          Mətndə istinad: <strong>Mətndə [N]</strong>.
+        </p>
+        <div id="footnote-items"></div>
+        <input type="hidden" name="footnote_items" id="footnote_items" value="" />
+        {{ footnote_items|json_script:"chapter-footnotes-data" }}
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Yadda saxla</button>
+      <span class="muted" style="font-size:13px">ID: {{ edit_chapter.id }} · {{ edit_chapter.public_id }}</span>
+    </div>
+  </form>
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'api/panel_chapter_editor.css' %}" />
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <script src="{% static 'api/panel_chapter_editor.js' %}"></script>
+  {% elif selected_book %}
+  <p class="empty">Yuxarıdan fəsil seçib «Düzəlt» basın.</p>
+  {% else %}
+  <p class="empty">Əvvəlcə kitab seçin.</p>
+  {% endif %}
+</section>
+{% endblock %}

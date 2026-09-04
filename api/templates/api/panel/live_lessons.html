@@ -1,0 +1,132 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Canlı dərslər — Sirac{% endblock %}
+{% block subtitle %}Telegram canlı{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Telegram canlı dərslər</h1>
+<p class="muted" style="margin:-8px 0 16px;font-size:14px">
+  Vaxt avtomatik status verir (planlaşdırılıb / canlı / bitib). Gecikmə olsa «Canlı» və ya «Bitib» basın.
+</p>
+
+<section class="form-panel">
+  <h2>Yeni canlı dərs</h2>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create_live_lesson" />
+    <div class="form-grid">
+      <div class="field full">
+        <label for="live_title">Başlıq</label>
+        <input id="live_title" name="title" type="text" required placeholder="Məs: Təcvid dərsi — Nun sakin" />
+      </div>
+      <div class="field">
+        <label for="live_teacher">Müəllim</label>
+        <input id="live_teacher" name="teacher_name" type="text" placeholder="Ad" />
+      </div>
+      <div class="field">
+        <label for="live_starts">Başlanğıc</label>
+        <input id="live_starts" name="starts_at" type="datetime-local" required />
+      </div>
+      <div class="field">
+        <label for="live_ends">Bitmə</label>
+        <input id="live_ends" name="ends_at" type="datetime-local" required />
+      </div>
+      <div class="field full">
+        <label for="live_url">Telegram linki</label>
+        <input id="live_url" name="telegram_url" type="url" required
+               placeholder="https://t.me/+... və ya https://t.me/kanal" />
+      </div>
+      <div class="field full">
+        <label for="live_desc">Qısa təsvir</label>
+        <input id="live_desc" name="description" type="text" placeholder="Mövzu, qeyd" />
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="is_published" checked /> App-də göstər
+        </label>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Əlavə et</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Cədvəl</h2>
+  {% if live_lessons_list %}
+  <table>
+    <thead>
+      <tr>
+        <th>Dərs</th>
+        <th>Vaxt</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in live_lessons_list %}
+      <tr>
+        <td>
+          <div>{{ l.title }}</div>
+          {% if l.teacher_name %}<div class="muted" style="font-size:12px">{{ l.teacher_name }}</div>{% endif %}
+          <div class="muted" style="font-size:11px;word-break:break-all">{{ l.telegram_url|truncatechars:50 }}</div>
+        </td>
+        <td class="muted" style="font-size:12px;white-space:nowrap">
+          {{ l.starts_at|date:"d.m.Y H:i" }}<br />→ {{ l.ends_at|date:"H:i" }}
+        </td>
+        <td>
+          {% if l.computed_status == 'live' %}
+            <span class="badge" style="background:rgba(196,92,74,0.25);color:#efb4aa">🔴 Canlı</span>
+          {% elif l.computed_status == 'scheduled' %}
+            <span class="badge">Planlaşdırılıb</span>
+          {% else %}
+            <span class="badge off">Bitib</span>
+          {% endif %}
+          {% if not l.is_published %}<span class="badge off">Gizli</span>{% endif %}
+        </td>
+        <td style="white-space:nowrap">
+          <form method="post" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="force_live_lesson" />
+            <input type="hidden" name="live_lesson_id" value="{{ l.id }}" />
+            <input type="hidden" name="force_status" value="live" />
+            <button type="submit" class="btn" style="padding:6px 8px;font-size:11px">Canlı</button>
+          </form>
+          <form method="post" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="force_live_lesson" />
+            <input type="hidden" name="live_lesson_id" value="{{ l.id }}" />
+            <input type="hidden" name="force_status" value="ended" />
+            <button type="submit" class="btn btn-danger" style="padding:6px 8px;font-size:11px">Bitib</button>
+          </form>
+          <form method="post" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="force_live_lesson" />
+            <input type="hidden" name="live_lesson_id" value="{{ l.id }}" />
+            <input type="hidden" name="force_status" value="" />
+            <button type="submit" class="btn" style="padding:6px 8px;font-size:11px;background:rgba(255,255,255,0.12);color:var(--text)">Auto</button>
+          </form>
+          <form method="post" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle_live_lesson" />
+            <input type="hidden" name="live_lesson_id" value="{{ l.id }}" />
+            <button type="submit" class="btn" style="padding:6px 8px;font-size:11px;background:rgba(196,161,90,0.35);color:var(--text)">
+              {% if l.is_published %}Gizlət{% else %}Göstər{% endif %}
+            </button>
+          </form>
+          <form method="post" class="inline-form" onsubmit="return confirm('Silinsin?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_live_lesson" />
+            <input type="hidden" name="live_lesson_id" value="{{ l.id }}" />
+            <button type="submit" class="btn btn-danger" style="padding:6px 8px;font-size:11px">Sil</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Canlı dərs yoxdur.</p>
+  {% endif %}
+</section>
+{% endblock %}

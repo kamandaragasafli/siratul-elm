@@ -1,0 +1,151 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Kitablar — Sirac{% endblock %}
+{% block subtitle %}Kitablar{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Kitablar</h1>
+
+<section class="form-panel" id="yeni-kitab">
+  <h2>Yeni kitab əlavə et</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create_book" />
+    <div class="form-grid">
+      <div class="field full">
+        <label for="book_title">Başlıq</label>
+        <input id="book_title" name="title" type="text" required placeholder="Kitab adı" />
+      </div>
+      <div class="field full">
+        <label for="book_cover">Qapaq şəkli</label>
+        <input id="book_cover" name="cover_image" type="file" accept="image/jpeg,image/png,image/webp,image/*" />
+        <span class="muted" style="font-size:12px;display:block;margin-top:4px">JPG, PNG və ya WebP — tətbiqdə kitab qapağı kimi görünəcək</span>
+      </div>
+      <div class="field">
+        <label for="book_author">Müəllif</label>
+        <input id="book_author" name="author" type="text" placeholder="Müəllif adı" />
+      </div>
+      <div class="field">
+        <label for="book_lang">Dil</label>
+        <select id="book_lang" name="language">
+          {% for code, label in language_choices %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field full">
+        <label for="book_desc">Qısa təsvir</label>
+        <input id="book_desc" name="description" type="text" placeholder="Kitab haqqında" />
+      </div>
+      <div class="field full">
+        <label for="book_topics">Mövzular (vergüllə)</label>
+        <input id="book_topics" name="topics" type="text" placeholder="əqidə, fiqh, təfsir" />
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="is_published" checked /> Yayınlı olsun
+        </label>
+      </div>
+      <div class="field full">
+        <label for="ch1_title">İlk fəsil başlığı (ixtiyari)</label>
+        <input id="ch1_title" name="chapter_title" type="text" placeholder="Məs: Müqəddimə" />
+      </div>
+      <div class="field full">
+        <label for="ch1_content">İlk fəsil mətni (ixtiyari)</label>
+        <textarea id="ch1_content" name="chapter_content" rows="8" placeholder="Mətni buraya yapışdırın…"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Kitab əlavə et</button>
+      <span class="muted" style="font-size:13px">Sonra Fəsillər səhifəsindən əlavə fəsil yaza bilərsiniz.</span>
+    </div>
+  </form>
+</section>
+
+<section class="form-panel">
+  <h2>JSON kitabları sinxron et</h2>
+  <p class="muted" style="margin:0 0 12px;font-size:13px">
+    <code>Sirac/assets/books/*.json</code> — paketdəki hazır kitabları DB-yə əlavə edir.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="sync_bundled_books" />
+    <div class="field" style="margin-bottom:12px">
+      <label class="check">
+        <input type="checkbox" name="overwrite_chapters" />
+        Fəsil mətnlərini də JSON-dan yenilə (düzəlişlər silinər)
+      </label>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Sinxron et</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Bütün kitablar</h2>
+  {% if books_list %}
+  <table>
+    <thead>
+      <tr>
+        <th>Qapaq</th>
+        <th>Başlıq</th>
+        <th>Müəllif</th>
+        <th>Fəsil</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in books_list %}
+      <tr>
+        <td>
+          {% if b.cover_image %}
+          <img src="{{ b.cover_image.url }}" alt="" style="width:42px;height:58px;object-fit:cover;border-radius:4px;border:1px solid rgba(196,161,90,0.35)" />
+          {% else %}
+          <span class="muted" style="font-size:12px">—</span>
+          {% endif %}
+        </td>
+        <td>{{ b.title|truncatechars:60 }}</td>
+        <td class="muted">{{ b.author|default:"—" }}</td>
+        <td class="muted">{{ b.chapter_count }}</td>
+        <td>
+          {% if b.is_published %}<span class="badge">Yayınlı</span>
+          {% else %}<span class="badge off">Gizli</span>{% endif %}
+        </td>
+        <td>
+          <a href="{% url 'panel-chapters' %}?book={{ b.id }}">Fəsillər</a>
+          ·
+          <form method="post" enctype="multipart/form-data" class="inline-form" style="display:inline-flex;align-items:center;gap:6px;margin:4px 0">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_book_cover" />
+            <input type="hidden" name="book_id" value="{{ b.id }}" />
+            <input type="file" name="cover_image" accept="image/*" style="max-width:140px;font-size:12px" />
+            <button type="submit" class="btn" style="padding:4px 8px;font-size:12px">Qapaq</button>
+          </form>
+          ·
+          <form method="post" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle_book" />
+            <input type="hidden" name="book_id" value="{{ b.id }}" />
+            <button type="submit" class="btn btn-danger" style="background:rgba(196,161,90,0.35);color:var(--text)">
+              {% if b.is_published %}Gizlət{% else %}Yayınla{% endif %}
+            </button>
+          </form>
+          ·
+          <form method="post" class="inline-form"
+                onsubmit="return confirm('«{{ b.title|escapejs }}» silinsin? Bütün fəsillər də silinəcək.');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_book" />
+            <input type="hidden" name="book_id" value="{{ b.id }}" />
+            <button type="submit" class="btn btn-danger">Sil</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Kitab yoxdur — yuxarıdan əlavə edin.</p>
+  {% endif %}
+</section>
+{% endblock %}

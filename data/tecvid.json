@@ -1,0 +1,770 @@
+{
+  "intro": "«Təcvid müəllimi» (Bəxtiyar Turab) — qısa təcvid dərsləri. Hər qaydanın altında YouTube video izahı var; tam öyrənmək üçün müəllim və ya səsli material da tövsiyə olunur.",
+  "sections": [
+    {
+      "id": "fasil1",
+      "title": "I fəsil — Nun sakin və tənvin",
+      "lessons": [
+        {
+          "id": "terminler",
+          "number": 1,
+          "title": "Təcvid elminə daxil olan terminlərin izahı",
+          "content": "Fəthə — hərfin üstündə olur və «ə» saitini verir.\n\nKəsrə — hərfin altında olur və «i» saitini verir.\n\nDamma — hərfin üstündə olur və «u» saitini verir.\n\nSükun — hərf hərəkəsiz oxunur, yalnız samit səslənir.\n\nŞəddə — hərfin üstündə olur və hərfi qoşa oxudur.\n\nTənvin fəthə — «ən» kimi oxunur.\n\nTənvin kəsrə — «in» kimi oxunur.\n\nTənvin damma — «un» kimi oxunur.",
+          "arabicExamples": [
+            {
+              "label": "Fəthə",
+              "arabic": "الْحَمْدُ",
+              "note": "əl-Həmdu"
+            },
+            {
+              "label": "Kəsrə",
+              "arabic": "مَالِكِ",
+              "note": "Maliki"
+            },
+            {
+              "label": "Damma",
+              "arabic": "نَعْبُدُ",
+              "note": "Na'budu"
+            },
+            {
+              "label": "Sükun",
+              "arabic": "أَنْعَمْتَ",
+              "note": "Ən'amtə"
+            },
+            {
+              "label": "Şəddə",
+              "arabic": "إِيَّاكَ",
+              "note": "İyyakə"
+            },
+            {
+              "label": "Tənvin fəthə",
+              "arabic": "رَغَدًا",
+              "note": "Rağadən"
+            },
+            {
+              "label": "Tənvin kəsrə",
+              "arabic": "بِحِجَارَةٍ",
+              "note": "Bihicaratin"
+            },
+            {
+              "label": "Tənvin damma",
+              "arabic": "مَرَضٌ",
+              "note": "Maradun"
+            }
+          ],
+          "sidebarTitle": "Təcvid terminləri",
+          "sidebarNumber": 1,
+          "videoId": "Vqt4TxNG3lk",
+          "videoTitle": "Təcvid müəllimi #1 — Təcvid terminləri"
+        },
+        {
+          "id": "nun-sakin",
+          "number": 2,
+          "title": "Nun sakin və tənvinin hökmləri",
+          "content": "Nun sakin (نْ) və tənvinlərin (ـًـٍـٌ) hökmləri dörd qismə bölünür:\n1. El-İzhar\n2. El-İdğam\n3. El-İqləb\n4. El-İxfa",
+          "sidebarTitle": "Nun sakin hökmləri",
+          "sidebarNumber": 2,
+          "videoId": "NJ2wF5R4nAA",
+          "videoTitle": "Təcvid müəllimi #2 — Nun sakin hökmləri"
+        },
+        {
+          "id": "izhar",
+          "number": 3,
+          "title": "El-İzhar",
+          "content": "İzhar — açıq şəkildə, gunnəsiz oxumaq deməkdir. Nun sakin və ya tənvindən sonra bu altı hərf gələrsə, «n» aydın tələffüz olunur. Bu hərflərə boğaz hərfləri də deyilir.",
+          "arabicLetters": [
+            "ء",
+            "ه",
+            "ع",
+            "ح",
+            "غ",
+            "خ"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "مِنْ هَادٍ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "حَكِيمٌ عَلِيمٌ"
+            }
+          ],
+          "sidebarTitle": "İzhar",
+          "sidebarNumber": 3,
+          "videoId": "ardOvil2GTY",
+          "videoTitle": "Təcvid müəllimi #3 — İzhar"
+        },
+        {
+          "id": "idgam",
+          "number": 4,
+          "title": "El-İdğam",
+          "content": "İdğam — bir səsi digərinə daxil etmək deməkdir. Nun sakin və ya tənvindən sonra bu altı hərf gələrsə, birinci hərf oxunmur, ikincisi şəddələnir. Bu hərflər «Yərmələun» (يرملون) sözündə cəmləşib.\n\nİdğam iki qismə bölünür:\n1. El-İdğam məl-gunnə\n2. El-İdğam bilə gunnə",
+          "arabicLetters": [
+            "ي",
+            "ر",
+            "م",
+            "ل",
+            "و",
+            "ن"
+          ],
+          "arabicWord": "يَرْمَلُونَ",
+          "sidebarTitle": "İdğam",
+          "sidebarNumber": 4,
+          "videoId": "M81YNXg_SRY",
+          "videoTitle": "Təcvid müəllimi #4 — İdğam"
+        },
+        {
+          "id": "idgam-ghunnah",
+          "number": 5,
+          "title": "El-İdğam məl-gunnə",
+          "content": "Nun sakin və ya tənvindən sonra bu dörd hərf gələrsə, «n» bu hərflərə daxil olur və səs burundan (gunnə ilə) çıxır. Qurani-Kərimdə dörd söz var ki, onlarda idğam baş vermir.",
+          "arabicLetters": [
+            "ي",
+            "ن",
+            "م",
+            "و"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "فَمَنْ يَعْمَلْ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "خَيْرًا يَرَهُ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "وَلِسَانًا وَشَفَتَيْنِ"
+            }
+          ],
+          "exceptionWords": [
+            "دُنْيَا",
+            "قِنْوَانٌ",
+            "صِنْوَانٌ",
+            "بُنْيَانٌ"
+          ],
+          "sidebarTitle": "İdğam məl-gunnə",
+          "sidebarNumber": 5,
+          "videoId": "fGlxIB9rjUg",
+          "videoTitle": "Təcvid müəllimi #5 — İdğam məl-gunnə"
+        },
+        {
+          "id": "idgam-bila-ghunnah",
+          "number": 6,
+          "title": "El-İdğam bilə gunnə",
+          "content": "Nun sakin və ya tənvindən sonra ل və ya ر gələrsə, «n» bu hərflərə daxil olur, lakin səs ağız boşluğundan çıxır — gunnə yoxdur.",
+          "arabicLetters": [
+            "ل",
+            "ر"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "مِنْ رَبِّهِمْ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "وَيْلٌ لِكُلِّ هُمَزَةٍ لُمَزَةٍ"
+            }
+          ],
+          "sidebarTitle": "İdğam bilə gunnə",
+          "sidebarNumber": 6,
+          "videoId": "WzLiNKJscdQ",
+          "videoTitle": "Təcvid müəllimi #6 — İdğam bilə gunnə"
+        },
+        {
+          "id": "iqlab",
+          "number": 7,
+          "title": "El-İqləb",
+          "content": "İqləb — çevirmək deməkdir. Nun sakin və ya tənvindən sonra «bə» (ب) hərfi gələrsə, «n» «m» səsinə çevrilir və qısa gunnə ilə oxunur. Bəzi Qur'an çaplarında «İqləb» qaydasını bildirmək üçün nun sakin və ya tənvinin üzərinə kiçik «mim» işarəsi qoyulur.",
+          "arabicLetters": [
+            "ب"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "مِنْ بَعْدُ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "إِنَّ اللَّهَ سَمِيعٌ بَصِيرٌ"
+            }
+          ],
+          "sidebarTitle": "İqlab",
+          "sidebarNumber": 7,
+          "videoId": "wcQ-Gpd5sLY",
+          "videoTitle": "Təcvid müəllimi #7 — İqlab"
+        },
+        {
+          "id": "ikhfa",
+          "number": 8,
+          "title": "El-İxfa",
+          "content": "İxfa — gizlətmək deməkdir. Nun sakin və ya tənvindən sonra aşağıda sadalanan on beş hərfdən biri gələrsə, «n» səsi tam tələffüz olunmur, «xayşum»dan (burun boşluğundan) çıxır.",
+          "arabicLetters": [
+            "ت",
+            "ث",
+            "ج",
+            "د",
+            "ذ",
+            "ز",
+            "س",
+            "ش",
+            "ص",
+            "ض",
+            "ط",
+            "ظ",
+            "ف",
+            "ق",
+            "ك"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "إِنْ كُنْتُمْ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "أَأَنْذَرْتَهُمْ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "قَوْلًا ثَقِيلًا"
+            }
+          ],
+          "sidebarTitle": "İxfa",
+          "sidebarNumber": 8,
+          "videoId": "oTcIfINbBEI",
+          "videoTitle": "Təcvid müəllimi #8 — İxfa"
+        }
+      ],
+      "sidebarTitle": "1-ci fəsil · Nun və tənvin"
+    },
+    {
+      "id": "fasil2",
+      "title": "II fəsil — Mim sakin",
+      "lessons": [
+        {
+          "id": "mim-hokm",
+          "number": 9,
+          "title": "Mim sakin hökmləri",
+          "content": "Mim sakinin (مْ) üç hökmü mövcuddur:\n1. İdğam-ul mim əs-sakinəh\n2. İxfa-ul mim əs-sakinəh\n3. İzhar-ul mim əs-sakinəh",
+          "sidebarTitle": "Mim sakin hökmləri",
+          "videoId": "_eZgCkRoQCE",
+          "videoTitle": "Təcvid müəllimi #9 — Mim sakin hökmləri"
+        },
+        {
+          "id": "idgam-mim",
+          "number": "9a",
+          "title": "İdğam-ul mim əs-sakinəh (idğam misleyn)",
+          "content": "Əgər sözün sonunda sükunlu «mim» gələrsə və bundan sonra gələn sözün əvvəli də «mim»lə başlayarsa, bu zaman «mim» hərfi idğam olunur, yəni birinci «mim» oxunmur, ikinci «mim» isə şəddələnir. Bu qaydaya «idğam misleyn» də deyilir.",
+          "arabicLetters": [
+            "م"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "وَلَكُمْ مَا كَسَبْتُمْ"
+            }
+          ],
+          "sidebarTitle": "İdğam-ul mim",
+          "sidebarNumber": 9,
+          "videoId": "_eZgCkRoQCE",
+          "videoTitle": "Təcvid müəllimi #9 — İdğam-ul mim"
+        },
+        {
+          "id": "ikhfa-mim",
+          "number": 10,
+          "title": "İxfa-ul mim əs-sakinəh",
+          "content": "Əgər sükunlu mimdən sonra «bə» (ب) hərfi gələrsə, mim hərfi «bə» hərfinin içərisində gizlənəcəkdir. Bu zaman səs «xayşum»dan (burun boşluğundan) çıxmalıdır.",
+          "arabicLetters": [
+            "ب"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "يَوْمَ هُمْ بَارِزُونَ"
+            }
+          ],
+          "sidebarTitle": "İxfa-ul mim",
+          "sidebarNumber": 10,
+          "videoId": "3UPzvoEwruk",
+          "videoTitle": "Təcvid müəllimi #10 — İxfa-ul mim"
+        },
+        {
+          "id": "izhar-mim",
+          "number": 11,
+          "title": "İzhar-ul mim əs-sakinəh",
+          "content": "Sükunlu mim yerdə qalan 26 hərfə rast gələrsə, açıq-aydın bir şəkildə oxunacaqdır.",
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "أَلَمْ تَرَ"
+            }
+          ],
+          "sidebarTitle": "İzhar-ul mim",
+          "sidebarNumber": 11,
+          "videoId": "xGdkYcfhsFk",
+          "videoTitle": "Təcvid müəllimi #11 — İzhar-ul mim"
+        }
+      ],
+      "sidebarTitle": "2-ci fəsil · Mim sakin"
+    },
+    {
+      "id": "idgam-nov",
+      "title": "İdğam növləri",
+      "lessons": [
+        {
+          "id": "idgam-misleyn",
+          "number": 12,
+          "title": "İdğam misleyn",
+          "content": "Misleyn sözünün lüğəti mənası iki eyni və ya mislində olan bir şey deməkdir. İstilahi mənası isə iki eyni və həmcins olan hərflərin bir-biri ilə qarşılaşması zamanı yaranan idğam növüdür ki, burada birinci hərf oxunmur, ikinci hərf isə şəddələnir (qoşalaşır).",
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "فَمَا رَبِحَتْ تِجَارَتُهُمْ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "اضْرِبْ بِعَصَاكَ"
+            }
+          ],
+          "sidebarTitle": "İdğam misleyn",
+          "sidebarNumber": 12,
+          "videoId": "pqYfV7-jvqY",
+          "videoTitle": "Təcvid müəllimi #12 — İdğam misleyn"
+        },
+        {
+          "id": "idgam-mutecaniseyn",
+          "number": 13,
+          "title": "İdğam mutəcaniseyn",
+          "content": "Formaca müxtəlif, lakin məxrəc etibarilə eyni olan hərflərin bir-birinə rast gəlməsi zamanı yaranan idğam növünə idğam mutəcaniseyn deyilir. Yəni məxrəcləri bir, sifətləri isə ayrı-ayrı olan iki hərf yan-yana gələrsə, birinci hərf oxunmayacaq, ikinci hərf isə şəddələnəcəkdir.\n\nBu hərflər üç qismdə cəmləşmişdir:\n1. ت، د، ط\n2. ث، ذ، ظ\n3. ب، م",
+          "arabicExamples": [
+            {
+              "label": "1-ci qrup misal",
+              "arabic": "عَبَدتُّمْ، قَدْ تَبَيَّنَ"
+            },
+            {
+              "label": "2-ci qrup misal",
+              "arabic": "يَلْهَثْ ذَلِكَ"
+            },
+            {
+              "label": "3-cü qrup misal",
+              "arabic": "ارْكَبْ مَعَنَا"
+            }
+          ],
+          "sidebarTitle": "İdğam mutəcaniseyn",
+          "sidebarNumber": 13,
+          "videoId": "ifNAOcfD36U",
+          "videoTitle": "Təcvid müəllimi #13 — İdğam mutəcaniseyn"
+        },
+        {
+          "id": "idgam-muteqarebeyn",
+          "number": 14,
+          "title": "İdğam mütəqaribeyn",
+          "content": "Formaca müxtəlif, lakin məxrəc etibarilə yaxın olan hərflərin bir-birinə rast gəlməsi zamanı yaranan idğam növünə idğam mütəqaribeyn deyilir. Yəni məxrəcləri və sifətləri yaxın olan iki hərf bir-birinə rast gələrsə, birinci hərf oxunmayacaq, ikinci hərf isə şəddələnəcəkdir.\n\nBu hərflər iki qrupda cəmləşmişdir:\n1. ق، ك\n2. ر، ل، ن",
+          "arabicExamples": [
+            {
+              "label": "1-ci qrup misal",
+              "arabic": "أَلَمْ نَخْلُقكُّمْ"
+            },
+            {
+              "label": "2-ci qrup misal",
+              "arabic": "بَلْ رَفَعَهُ اللَّهُ"
+            }
+          ],
+          "sidebarTitle": "İdğam mütəqaribeyn",
+          "sidebarNumber": 14,
+          "videoId": "FUwMhd52Y5I",
+          "videoTitle": "Təcvid müəllimi #14 — İdğam mütəqaribeyn"
+        },
+        {
+          "id": "idgam-semsiyye",
+          "number": 15,
+          "title": "İdğam şəmsiyyə",
+          "content": "الـ artiklindən sonra bu on dörd hərf gələrsə, idğam şəmsiyyə baş verər, yəni الـ artiklindəki ل hərfi oxunmaz, bu hərflərdən biri isə şəddələnər.\n\nŞəmsiyyə sözü günəşli havada ulduzların görünməməsi mənasını ifadə edir. Yəni ل hərfi var, lakin oxunmur.",
+          "arabicLetters": [
+            "ت",
+            "ث",
+            "د",
+            "ذ",
+            "ر",
+            "ز",
+            "س",
+            "ش",
+            "ص",
+            "ض",
+            "ط",
+            "ظ",
+            "ل",
+            "ن"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "الرَّحْمَـٰنِ الرَّحِيمِ"
+            }
+          ],
+          "sidebarTitle": "İdğam şəmsiyyə",
+          "sidebarNumber": 15,
+          "videoId": "M3MBwIrKEys",
+          "videoTitle": "Təcvid müəllimi #15 — İdğam şəmsiyyə"
+        },
+        {
+          "id": "izhar-qamariyye",
+          "number": 16,
+          "title": "İzhar qamariyyə",
+          "content": "الـ artiklindən sonra bu on dörd hərf gələrsə, izhar qamariyyə baş verər.\n\nQamariyyə sözünün mənası aylı gecədə ulduzların aydın görünməsi misalındadır. Yəni ل hərfi açıq-aydın şəkildə oxunacaqdır.",
+          "arabicLetters": [
+            "ا",
+            "ب",
+            "ج",
+            "ح",
+            "خ",
+            "ع",
+            "غ",
+            "ف",
+            "ق",
+            "ك",
+            "م",
+            "ه",
+            "و",
+            "ي"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "الْقَارِعَةُ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "الْحَجُّ"
+            }
+          ],
+          "sidebarTitle": "İzhar qamariyyə",
+          "sidebarNumber": 16,
+          "videoId": "XOTjaYYyqVc",
+          "videoTitle": "Təcvid müəllimi #16 — İzhar qamariyyə"
+        }
+      ],
+      "sidebarTitle": "İdğam növləri"
+    },
+    {
+      "id": "diger",
+      "title": "Qalqalə və Ləfzətullah",
+      "lessons": [
+        {
+          "id": "qalqale",
+          "number": 17,
+          "title": "Qalqalə",
+          "content": "Qalqalə sözünün mənası əks-səda deməkdir.\n\nQalqalə hərfləri beşdir. Bu hərflər «Qutbucəd» sözündə cəmləşmişdir. Qalqalə iki qismə bölünür:\n1. Böyük qalqalə — bu beş hərfdən biri sükunlu olaraq sözün sonunda gələrsə.\n2. Kiçik qalqalə — bu beş hərfdən biri sükunlu olaraq sözün ortasında gələrsə.",
+          "arabicLetters": [
+            "ق",
+            "ط",
+            "ب",
+            "ج",
+            "د"
+          ],
+          "arabicWord": "قُطْبُجَد",
+          "arabicExamples": [
+            {
+              "label": "Böyük qalqaləyə aid",
+              "arabic": "الْفَلَقِ"
+            },
+            {
+              "label": "Böyük qalqaləyə aid",
+              "arabic": "أَحَدٌ"
+            },
+            {
+              "label": "Kiçik qalqaləyə aid",
+              "arabic": "يَدْخُلُونَ"
+            }
+          ],
+          "sidebarTitle": "Qalqalə",
+          "sidebarNumber": 17,
+          "videoId": "Z6nAjhv61yo",
+          "videoTitle": "Təcvid müəllimi #17 — Qalqalə"
+        },
+        {
+          "id": "lefzullah",
+          "number": 18,
+          "title": "Ləfzətullah",
+          "content": "Ləfzətullah — Allah sözündə olan ل-in qalın və ya incə oxunmasına deyilir.\n\nƏgər Allah sözündən əvvəl gələn hərfin hərəkəsi fəthə (ə) və ya damma (u) olarsa, bu zaman Allah sözü qalın oxunar.\n\nƏgər Allah sözündən əvvəl gələn hərfin hərəkəsi kəsrə (i) olarsa, bu zaman Allah sözü incə oxunar.",
+          "arabicExamples": [
+            {
+              "label": "Qalın oxunuş",
+              "arabic": "اللَّهُ"
+            },
+            {
+              "label": "Qalın oxunuş",
+              "arabic": "رَسُولُ اللَّهِ"
+            },
+            {
+              "label": "İncə oxunuş",
+              "arabic": "بِسْمِ اللَّهِ"
+            }
+          ],
+          "sidebarTitle": "Ləfzətullah",
+          "sidebarNumber": 18,
+          "videoId": "yQu2LxInUI8",
+          "videoTitle": "Təcvid müəllimi #18 — Ləfzətullah"
+        }
+      ],
+      "sidebarTitle": "Qalqalə · Ləfzətullah"
+    },
+    {
+      "id": "fasil3",
+      "title": "III fəsil — Méd",
+      "lessons": [
+        {
+          "id": "med-herf",
+          "number": 19,
+          "title": "Méd (uzatma) hərfləri",
+          "content": "Méd sözünün lüğəti mənası uzatmaq deməkdir. Yəni hərfin saitinin uzadılmasıdır. Ərəb dilində üç méd hərfi vardır: ا، و، ي\n\n1. Əgər əlif sakin olarsa (üzərində heç bir hərəkə olmazsa) və özündən əvvəl gələn hərfin hərəkəsi fəthə (ə) olarsa, bu zaman fəthə iki hərəkə miqdarında uzadılacaqdır.\n2. Əgər vav sakin olarsa və özündən əvvəl gələn hərfin hərəkəsi damma (u) olarsa, bu zaman damma iki hərəkə miqdarında uzadılacaqdır.\n3. Əgər yə sakin olarsa və özündən əvvəl gələn hərfin hərəkəsi kəsrə (i) olarsa, bu zaman kəsrə iki hərəkə miqdarında uzadılacaqdır.",
+          "arabicLetters": [
+            "ا",
+            "و",
+            "ي"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Əlif méd",
+              "arabic": "قَالَ"
+            },
+            {
+              "label": "Vav méd",
+              "arabic": "يَقُولُ"
+            },
+            {
+              "label": "Yə méd",
+              "arabic": "الَّذِي"
+            }
+          ],
+          "sidebarTitle": "Məd hərfləri",
+          "sidebarNumber": 19,
+          "videoId": "GtPQlxNQkQ0",
+          "videoTitle": "Təcvid müəllimi #19 — Məd hərfləri"
+        },
+        {
+          "id": "med-muttasil",
+          "number": 20,
+          "title": "Méd-ul-muttasil",
+          "content": "Muttasil sözünün lüğəti mənası bitişən deməkdir. Əgər méd hərfindən sonra həmzə (ء) gələrsə və bu həmzə eyni sözdə olarsa, bu zaman méd-ul-muttasil baş verər.\n\nMéd-ul-muttasilin təcvid elminə görə hökmü vacibdir. Yəni méd hərfi dörd və ya beş hərəkə uzadılacaqdır.",
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "وَمَا يَكَادُ السُّوءُ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "يَكَادُ زَيْتُهَا يُضِيءُ"
+            }
+          ],
+          "sidebarTitle": "Məd-ul-muttasil",
+          "sidebarNumber": 20,
+          "videoId": "LvPEINdVaPQ",
+          "videoTitle": "Təcvid müəllimi #20 — Məd-ul-muttasil"
+        },
+        {
+          "id": "med-munfasil",
+          "number": 21,
+          "title": "Méd-ul-munfasil",
+          "content": "Munfasil sözünün lüğəti mənası iki şeyin bir-birindən ayrı olması deməkdir. Əgər méd hərfindən sonra gələn həmzə ayrı-ayrı kəlmələrdə olarsa, bu zaman méd-ul-munfasil baş verər.\n\nMéd-ul-munfasilin uzadılması caizdir, yəni iki, dörd, beş hərəkə uzadıla bilər.",
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "إِنَّا أَنزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ"
+            }
+          ],
+          "sidebarTitle": "Məd-ul-munfasil",
+          "sidebarNumber": 21,
+          "videoId": "A7IboQGstcs",
+          "videoTitle": "Təcvid müəllimi #21 — Məd-ul-munfasil"
+        },
+        {
+          "id": "med-lazim",
+          "number": 22,
+          "title": "Méd-ul-lazim",
+          "content": "Adından göründüyü kimi, bu, elə bir méd növüdür ki, uzadılması lazımdır. Méd hərfindən sonra médə səbəb olan amillərdən biri, yəni sükun gələrsə, bu zaman méd-ul-lazim baş verər.\n\nMéd-ul-lazimin uzadılması vacibdir və bu, altı hərəkədir. Méd-ul-lazim dörd qismə bölünür:\n1. Méd-ul-lazim kəlimi müsəqqəl (şəddəli kəlmə)\n2. Méd-ul-lazim kəlimi muxaffəf (sükunlu kəlmə) — bu méd növü Qurani-Kərimdə yalnız Yunus surəsinin 51 və 91-ci ayələrində keçir.\n3. Méd-ul-lazim hərfi müsəqqəl (şəddəli hərf) — surə başlıqlarında olan müəyyən hərflər.\n4. Méd-ul-lazim hərfi muxaffəf (sükunlu hərf) — surə başlıqlarında olan müəyyən hərflər.",
+          "arabicExamples": [
+            {
+              "label": "Kəlimi müsəqqəl",
+              "arabic": "وَلَا الضَّالِّينَ"
+            },
+            {
+              "label": "Kəlimi muxaffəf (Yunus 51, 91)",
+              "arabic": "آلْآنَ وَقَدْ كُنتُم بِهِ تَسْتَعْجِلُونَ"
+            },
+            {
+              "label": "Kəlimi muxaffəf (Yunus 91)",
+              "arabic": "آلْآنَ وَقَدْ عَصَيْتَ قَبْلُ وَكُنتَ مِنَ الْمُفْسِدِينَ"
+            },
+            {
+              "label": "Hərfi müsəqqəl",
+              "arabic": "الم"
+            },
+            {
+              "label": "Hərfi muxaffəf",
+              "arabic": "الر"
+            }
+          ],
+          "sidebarTitle": "Məd-ul-lazim",
+          "sidebarNumber": 22,
+          "videoId": "AGticzr1Lo0",
+          "videoTitle": "Təcvid müəllimi #22 — Məd-ul-lazim"
+        },
+        {
+          "id": "med-arid",
+          "number": 23,
+          "title": "Méd-ul-arid lis-sukun",
+          "content": "Méd-ul-arid méd hərfindən sonra gələn hərfin üzərində dayanmaqdır. Uzatma miqdarı isə iki, dörd və ya altı hərəkədir.",
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "الرَّحْمَـٰنِ الرَّحِيمِ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "وَمِمَّا رَزَقْنَاهُمْ يُنفِقُونَ"
+            }
+          ],
+          "sidebarTitle": "Məd-ul-arid",
+          "sidebarNumber": 23,
+          "videoId": "Zu_s7op5Amw",
+          "videoTitle": "Təcvid müəllimi #23 — Məd-ul-arid"
+        },
+        {
+          "id": "med-lin",
+          "number": 24,
+          "title": "Méd-ul-lin",
+          "content": "Lin sözünün lüğəti mənası uzatmaq və ya dartmaq deməkdir. İstilahi mənada isə sözün sonuncu hərfindən əvvəl و yaxud ي hərflərinin sükunlu gəlməsinə deyilir. Bu méd növündə şərtdir ki, sükunlu و yaxud ي hərflərindən əvvəl gələn hərfin hərəkəsi fəthə olsun. Uzatma miqdarı iki, dörd və ya altı hərəkədir.\n\nBu méd növü sözün sonunda dayandığımız zaman ifadə olunmalıdır.",
+          "arabicLetters": [
+            "و",
+            "ي"
+          ],
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "خَوْفٌ"
+            },
+            {
+              "label": "Misal",
+              "arabic": "قُرَيْشٍ"
+            }
+          ],
+          "sidebarTitle": "Məd-ul-lin",
+          "sidebarNumber": 24,
+          "videoId": "bWlZhJVPvmo",
+          "videoTitle": "Təcvid müəllimi #24 — Məd-ul-lin"
+        },
+        {
+          "id": "med-ivad",
+          "number": 25,
+          "title": "Méd-ul-ivad",
+          "content": "İvad sözünün lüğəti mənası əvəz etmək deməkdir. Bu méd növü sözün sonunda olan yalnız tənvin fəthənin (ən) vəqf (dayanmaq) zamanı fəthə (ə) ilə əvəz olunmasına deyilir. Uzatma miqdarı iki hərəkədir.",
+          "arabicExamples": [
+            {
+              "label": "Misal",
+              "arabic": "أَنَّ لَهُمْ أَجْرًا حَسَنًا"
+            }
+          ],
+          "sidebarTitle": "Məd-ul-ivad",
+          "sidebarNumber": 25,
+          "videoId": "W-s7Tasjybw",
+          "videoTitle": "Təcvid müəllimi #25 — Məd-ul-ivad"
+        }
+      ],
+      "sidebarTitle": "3-cü fəsil · Məd"
+    },
+    {
+      "id": "son",
+      "title": "Sektə və vəqf",
+      "lessons": [
+        {
+          "id": "sekte",
+          "number": 26,
+          "title": "Sektə",
+          "content": "Sektə sözünün lüğəti mənası sakit olmaq və ya dayanmaq deməkdir. İstilahi mənada isə qarinin qiraət zamanı səsini kəsib nəfəs almadan bir az dayanmasına deyilir və سكتة işarəsi ilə bildirilir.\n\nHəfs an-Asim (on qiraətdən biri) qiraətinə görə, Qurani-Kərimdə dörd yerdə sektə edilir:\n1. Kəhf surəsi, 1-ci ayə\n2. Yasin surəsi, 52-ci ayə\n3. Qiyamət surəsi, 27-ci ayə\n4. Mutaffifin surəsi, 14-cü ayə",
+          "arabicExamples": [
+            {
+              "label": "Kəhf 1",
+              "arabic": "الْحَمْدُ لِلَّهِ الَّذِي أَنزَلَ عَلَىٰ عَبْدِهِ الْكِتَابَ وَلَمْ يَجْعَل لَّهُ عِوَجًا ۜ قَيِّمًا لِّيُنذِرَ بَأْسًا شَدِيدًا"
+            },
+            {
+              "label": "Yasin 52",
+              "arabic": "قَالُوا يَا وَيْلَنَا مَن بَعَثَنَا مِن مَّرْقَدِنَا ۜ ۗ هَـٰذَا مَا وَعَدَ الرَّحْمَـٰنُ وَصَدَقَ الْمُرْسَلُونَ"
+            },
+            {
+              "label": "Qiyamət 27",
+              "arabic": "وَقِيلَ مَنْ ۜ رَاقٍ"
+            },
+            {
+              "label": "Mutaffifin 14",
+              "arabic": "كَلَّا ۖ بَلْ ۜ رَانَ عَلَىٰ قُلُوبِهِم مَّا كَانُوا يَكْسِبُونَ"
+            }
+          ],
+          "sidebarTitle": "Sektə",
+          "sidebarNumber": 26,
+          "videoId": "hNDdwoXmm8o",
+          "videoTitle": "Təcvid müəllimi #26 — Sektə"
+        },
+        {
+          "id": "isareler",
+          "number": 27,
+          "title": "Qurani-Kərimdə bəzi işarələrin mənası",
+          "content": "1. مـ — mütləq dayanmaq lazımdır.\n2. لا — durmadan keçmək lazımdır.\n3. صلى — dayanmaq da olar, keçmək də; keçmək daha əfzəldir.\n4. ج — dayanmaq da olar, keçmək də; dayanmaq daha əfzəldir.\n5. قلي — dayanmaq daha gözəldir.\n6. ∴ ∴ (qılı) — birincisində keçmək, ikincisində isə dayanmaq və ya əksinə etmək də olar.\n\nBu layihə Həfs-an-Asim qiraətinə əsaslanır.",
+          "arabicExamples": [
+            {
+              "label": "مـ misalı",
+              "arabic": "إِنَّمَا يَسْتَجِيبُ الَّذِينَ يَسْمَعُونَ ۘ وَالْمَوْتَىٰ يَبْعَثُهُمُ اللَّهُ ثُمَّ إِلَيْهِ يُرْجَعُونَ"
+            },
+            {
+              "label": "لا misalı",
+              "arabic": "الَّذِينَ تَتَوَفَّاهُمُ الْمَلَائِكَةُ طَيِّبِينَ ۙ يَقُولُونَ سَلَامٌ عَلَيْكُمُ ادْخُلُوا الْجَنَّةَ بِمَا كُنتُمْ تَعْمَلُونَ"
+            },
+            {
+              "label": "صلى misalı",
+              "arabic": "فِي قُلُوبِهِم مَّرَضٌ فَزَادَهُمُ اللَّهُ مَرَضًا ۖ وَلَهُمْ عَذَابٌ أَلِيمٌ بِمَا كَانُوا يَكْذِبُونَ"
+            },
+            {
+              "label": "ج misalı",
+              "arabic": "يُضِلُّ بِهِ كَثِيرًا ج وَيَهْدِي بِهِ كَثِيرًا"
+            },
+            {
+              "label": "قلي misalı",
+              "arabic": "وَإِذْ تَأَذَّنَ رَبُّكَ لَيَبْعَثَنَّ عَلَيْهِمْ إِلَىٰ يَوْمِ الْقِيَامَةِ مَن يَسُومُهُمْ سُوءَ الْعَذَابِ ۗ إِنَّ رَبَّكَ لَسَرِيعُ الْعِقَابِ وَإِنَّهُ لَغَفُورٌ رَّحِيمٌ"
+            },
+            {
+              "label": "∴∴ misalı",
+              "arabic": "ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ"
+            }
+          ],
+          "sidebarTitle": "Vəqf işarələri",
+          "sidebarNumber": 27,
+          "videoId": "bZct_jp_kjo",
+          "videoTitle": "Təcvid müəllimi #27 — Vəqf işarələri"
+        }
+      ],
+      "sidebarTitle": "Sektə · Vəqf"
+    }
+  ],
+  "videoPlaylist": {
+    "id": "PLgzWbUelLdiU0kKtVJ_iAjqHUxOLOaFj4",
+    "url": "https://www.youtube.com/playlist?list=PLgzWbUelLdiU0kKtVJ_iAjqHUxOLOaFj4",
+    "title": "Təcvid müəllimi",
+    "author": "Bəxtiyar Turab"
+  }
+}

@@ -1,0 +1,104 @@
+{% extends "api/panel/base.html" %}
+{% block title %}Ana — Sirac{% endblock %}
+{% block subtitle %}Ana səhifə{% endblock %}
+
+{% block content %}
+<div class="grid">
+  <div class="stat">
+    <div class="n">{{ stats.books }}</div>
+    <div class="l">Kitab</div>
+    <div class="sub">{{ stats.books_published }} yayınlı · {{ stats.chapters }} fəsil</div>
+  </div>
+  <div class="stat">
+    <div class="n">{{ stats.channels }}</div>
+    <div class="l">Kanal</div>
+    <div class="sub">{{ stats.channels_published }} yayınlı</div>
+  </div>
+  <div class="stat">
+    <div class="n">{{ stats.series }}</div>
+    <div class="l">Silsilə</div>
+    <div class="sub">{{ stats.series_published }} yayınlı</div>
+  </div>
+  <div class="stat">
+    <div class="n">{{ stats.lessons }}</div>
+    <div class="l">Dərs</div>
+    <div class="sub">{{ stats.lessons_with_audio }} səs faylı</div>
+  </div>
+  <div class="stat">
+    <div class="n">{{ stats.support_unread }}</div>
+    <div class="l">Dəstək</div>
+    <div class="sub">{{ stats.support }} ümumi · oxunmamış</div>
+  </div>
+</div>
+
+<div class="cards">
+  <a class="card" href="{% url 'panel-books' %}">
+    <h3>Kitablar</h3>
+    <p>Siyahı, JSON sinxron, yayın statusu.</p>
+  </a>
+  <a class="card" href="{% url 'panel-chapters' %}">
+    <h3>Fəsillər</h3>
+    <p>Hərf xətalarını düzəlt, mətn redaktə et.</p>
+  </a>
+  <a class="card" href="{% url 'panel-channels' %}">
+    <h3>Kanallar</h3>
+    <p>Yeni kanal, playlist sinxronu, siyahı.</p>
+  </a>
+  <a class="card" href="{% url 'panel-lessons' %}">
+    <h3>Dərslər</h3>
+    <p>Yeni dərs əlavə et, silsilədən dərs sil.</p>
+  </a>
+  <a class="card" href="{% url 'panel-live-lessons' %}">
+    <h3>Canlı (Telegram)</h3>
+    <p>Cədvəl, link, avtomatik status.</p>
+  </a>
+  <a class="card" href="{% url 'panel-meal-notes' %}">
+    <h3>Məal qısa məlumat</h3>
+    <p>Surə/ayə qeydləri və hökm haşiyələri.</p>
+  </a>
+  <a class="card" href="{% url 'panel-support' %}">
+    <h3>Dəstək</h3>
+    <p>Tətbiqdən gələn yardım mesajları.</p>
+  </a>
+</div>
+
+<div class="split" style="margin-top:24px">
+  <section class="panel">
+    <h2>Son kitablar</h2>
+    {% if recent_books %}
+    <table>
+      <thead><tr><th>Başlıq</th><th>Müəllif</th></tr></thead>
+      <tbody>
+        {% for b in recent_books %}
+        <tr>
+          <td><a href="{% url 'panel-chapters' %}?book={{ b.id }}">{{ b.title|truncatechars:48 }}</a></td>
+          <td class="muted">{{ b.author|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Kitab yoxdur.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Son dərslər</h2>
+    {% if recent_lessons %}
+    <table>
+      <thead><tr><th>Dərs</th><th>Kanal</th></tr></thead>
+      <tbody>
+        {% for l in recent_lessons %}
+        <tr>
+          <td>{{ l.title|truncatechars:48 }}</td>
+          <td class="muted">{{ l.series.channel.name }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Dərs yoxdur.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'api/admin_book_form.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if not original %}
+<div class="book-admin-guide">
+  <h2>📖 Yeni kitab əlavə etmək</h2>
+  <ol>
+    <li>
+      <strong>Kitab adı</strong> yazın
+      <span class="required-badge">mütləq</span>
+    </li>
+    <li>İstəsəniz müəllif, qısa təsvir və mövzuları doldurun.</li>
+    <li><strong>Qapaq şəkli</strong> seçin — Sirac tətbiqində kitabxanada belə görünəcək.</li>
+    <li><strong>Tətbiqdə göstər</strong> qalsın — kitab dərhal tətbiqdə görünsün.</li>
+    <li>
+      Aşağıdakı <strong>«Fəsillər»</strong> bölməsində fəsil adı və oxunacaq mətni yazın.
+      Sıra və ID avtomatik yaranır.
+    </li>
+    <li>Sonra aşağıdakı <strong>Saxla və davam et</strong> düyməsinə basın.</li>
+  </ol>
+  <p class="hint">
+    «Kitab ID» və digər texniki sahələr aşağıda qatlanmış blokdadır — adətən toxunmaq lazım deyil.
+    Boş fəsil sətirini boş buraxa bilərsiniz.
+  </p>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

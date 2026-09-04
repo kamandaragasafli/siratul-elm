@@ -1,0 +1,56 @@
+{% load chapter_extras %}
+{# Sirac oxucu — mobil önizləmə fragmenti #}
+<div class="reader-preview-inner{% if rtl %} rtl{% endif %}">
+  {% if chapter_title %}
+  <div class="rp-chapter-title">{{ chapter_title }}</div>
+  {% endif %}
+  {% for node in blocks %}
+    {% if node.type == 'heading1' %}
+      <h2 class="rp-h1">{{ node.text|fn_refs:valid_numbers }}</h2>
+    {% elif node.type == 'heading2' %}
+      <h3 class="rp-h2">{{ node.text|fn_refs:valid_numbers }}</h3>
+    {% elif node.type == 'quote' %}
+      <blockquote class="rp-quote">{{ node.text|fn_refs:valid_numbers }}</blockquote>
+    {% elif node.type == 'listItem' %}
+      <div class="rp-list-item">
+        <span class="rp-list-marker">{% if node.listStyle == 'number' %}•{% else %}•{% endif %}</span>
+        <span class="rp-list-body">
+          {% for run in node.runs %}
+            {% if run.bold and run.italic %}<strong><em>{{ run.text|fn_refs:valid_numbers }}</em></strong>
+            {% elif run.bold %}<strong>{{ run.text|fn_refs:valid_numbers }}</strong>
+            {% elif run.italic %}<em>{{ run.text|fn_refs:valid_numbers }}</em>
+            {% else %}{{ run.text|fn_refs:valid_numbers }}{% endif %}
+          {% endfor %}
+        </span>
+      </div>
+    {% elif node.type == 'paragraph' %}
+      <p class="rp-p align-{{ node.align|default:'justified' }}">
+        {% for run in node.runs %}
+          {% if run.bold and run.italic %}<strong><em>{{ run.text|fn_refs:valid_numbers }}</em></strong>
+          {% elif run.bold %}<strong>{{ run.text|fn_refs:valid_numbers }}</strong>
+          {% elif run.italic %}<em>{{ run.text|fn_refs:valid_numbers }}</em>
+          {% else %}{{ run.text|fn_refs:valid_numbers }}{% endif %}
+        {% endfor %}
+      </p>
+    {% elif node.type == 'footnotes' %}
+      <div class="rp-footnotes">
+        <div class="rp-fn-title">{{ node.heading|default:"Qeydlər və istinadlar" }}</div>
+        {% if node.entries %}
+          {% for entry in node.entries %}
+            {% if entry.text %}
+            <div class="rp-fn-item"><span class="rp-fn-num">[{{ entry.n }}]</span> {{ entry.text }}</div>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          {% for item in node.items %}
+            {% if item %}
+            <div class="rp-fn-item"><span class="rp-fn-num">[{{ forloop.counter }}]</span> {{ item }}</div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% endif %}
+  {% empty %}
+    <p class="rp-empty">Mətn yazın — burada telefonda necə görünəcəyini görəcəksiniz.</p>
+  {% endfor %}
+</div>
