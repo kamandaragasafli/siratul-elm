@@ -1,11 +1,11 @@
 {% extends "api/panel/base.html" %}
 {% block title %}Canlı dərslər — Sirac{% endblock %}
-{% block subtitle %}Telegram canlı{% endblock %}
+{% block subtitle %}LiveKit / Telegram{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Telegram canlı dərslər</h1>
+<h1 class="page-title">Canlı dərslər</h1>
 <p class="muted" style="margin:-8px 0 16px;font-size:14px">
-  Vaxt avtomatik status verir (planlaşdırılıb / canlı / bitib). Gecikmə olsa «Canlı» və ya «Bitib» basın.
+  LiveKit işarələnəndə dərs tətbiq içində kamera/səslə açılır. Gecikmə olsa «Canlı» və ya «Bitib» basın.
 </p>
 
 <section class="form-panel">
@@ -31,13 +31,22 @@
         <input id="live_ends" name="ends_at" type="datetime-local" required />
       </div>
       <div class="field full">
-        <label for="live_url">Telegram linki</label>
-        <input id="live_url" name="telegram_url" type="url" required
-               placeholder="https://t.me/+... və ya https://t.me/kanal" />
+        <label for="live_url">Telegram linki (LiveKit varsa opsional)</label>
+        <input id="live_url" name="telegram_url" type="url"
+               placeholder="https://t.me/+... və ya boş saxlayın" />
+      </div>
+      <div class="field full">
+        <label for="live_room">LiveKit otaq adı (boş = avtomatik)</label>
+        <input id="live_room" name="livekit_room_name" type="text" placeholder="məs: tecvid-nur" />
       </div>
       <div class="field full">
         <label for="live_desc">Qısa təsvir</label>
         <input id="live_desc" name="description" type="text" placeholder="Mövzu, qeyd" />
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="is_livekit_enabled" checked /> Tətbiq daxili LiveKit (kamera/səs)
+        </label>
       </div>
       <div class="field">
         <label class="check">
@@ -69,7 +78,11 @@
         <td>
           <div>{{ l.title }}</div>
           {% if l.teacher_name %}<div class="muted" style="font-size:12px">{{ l.teacher_name }}</div>{% endif %}
-          <div class="muted" style="font-size:11px;word-break:break-all">{{ l.telegram_url|truncatechars:50 }}</div>
+          {% if l.is_livekit_enabled %}
+            <div class="muted" style="font-size:11px">LiveKit: {{ l.livekit_room_name|default:"—" }}</div>
+          {% else %}
+            <div class="muted" style="font-size:11px;word-break:break-all">{{ l.telegram_url|truncatechars:50 }}</div>
+          {% endif %}
         </td>
         <td class="muted" style="font-size:12px;white-space:nowrap">
           {{ l.starts_at|date:"d.m.Y H:i" }}<br />→ {{ l.ends_at|date:"H:i" }}

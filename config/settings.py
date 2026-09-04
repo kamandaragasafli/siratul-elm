@@ -118,12 +118,11 @@ REST_FRAMEWORK = {
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 HIFZ_MAX_AUDIO_MB = int(os.environ.get('HIFZ_MAX_AUDIO_MB', '12'))
 
-# ── LiveKit (lokal Docker server — ws://192.168.1.X:7880) ────────────────────
-# Yerli `.env` faylında və ya mühit dəyişənlərində konfiqurasiya edin.
-LIVEKIT_API_KEY = os.environ.get('LIVEKIT_API_KEY', 'devkey')
-LIVEKIT_API_SECRET = os.environ.get('LIVEKIT_API_SECRET', 'devsecret')
-# Mobil cihazın şəbəkədəki IP-ni göstərin (localhost işləmir):
-LIVEKIT_SERVER_URL = os.environ.get('LIVEKIT_SERVER_URL', 'ws://192.168.1.100:7880')
+# ── LiveKit (cloud.livekit.io və ya öz serveriniz — mütləq wss://) ───────────
+# Render Environment-də təyin edin. Default lokal IP APK-də işləmir.
+LIVEKIT_API_KEY = os.environ.get('LIVEKIT_API_KEY', '').strip()
+LIVEKIT_API_SECRET = os.environ.get('LIVEKIT_API_SECRET', '').strip()
+LIVEKIT_SERVER_URL = os.environ.get('LIVEKIT_SERVER_URL', '').strip()
 # Müəllim kodları Django admin → «Canlı yayım müəllimləri» bölməsindədir.
 
 # ── Telegram sual-cavab (tətbiqdən birbaşa göndərmə) ────────────────────────

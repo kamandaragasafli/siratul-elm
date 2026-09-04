@@ -702,11 +702,22 @@ def _handle_create_live_lesson(request):
     starts = _parse_panel_datetime(request.POST.get('starts_at'))
     ends = _parse_panel_datetime(request.POST.get('ends_at'))
     published = request.POST.get('is_published') == 'on'
+    livekit_enabled = request.POST.get('is_livekit_enabled') == 'on'
+    room_name = (request.POST.get('livekit_room_name') or '').strip()
 
     if len(title) < 2:
         return 'Dərs başlığı yazın.'
-    if not url.startswith(('http://', 'https://')):
-        return 'Düzgün Telegram linki yazın (https://t.me/...).'
+    if livekit_enabled:
+        if not room_name:
+            # Avtomatik otaq adı
+            import re
+            import time
+            slug = re.sub(r'[^a-z0-9]+', '-', title.lower())[:40].strip('-') or 'ders'
+            room_name = f'{slug}-{int(time.time()) % 100000}'
+        if not url:
+            url = 'https://t.me/'
+    elif not url.startswith(('http://', 'https://')):
+        return 'Düzgün Telegram linki yazın (https://t.me/...) və ya LiveKit işarələyin.'
     if not starts:
         return 'Başlanğıc vaxtı seçin.'
     if not ends:
@@ -724,6 +735,8 @@ def _handle_create_live_lesson(request):
         ends_at=ends,
         order=max_order + 1,
         is_published=published,
+        livekit_room_name=room_name if livekit_enabled else '',
+        is_livekit_enabled=livekit_enabled,
     )
     messages.success(request, f'Canlı dərs əlavə olundu: {title}')
     return None

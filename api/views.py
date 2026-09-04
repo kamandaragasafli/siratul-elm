@@ -499,8 +499,26 @@ def livekit_token(request):
     try:
         from livekit.api import AccessToken, VideoGrants
 
-        api_key = getattr(django_settings, 'LIVEKIT_API_KEY', 'devkey')
-        api_secret = getattr(django_settings, 'LIVEKIT_API_SECRET', 'devsecret')
+        api_key = getattr(django_settings, 'LIVEKIT_API_KEY', '') or ''
+        api_secret = getattr(django_settings, 'LIVEKIT_API_SECRET', '') or ''
+        server_url = getattr(django_settings, 'LIVEKIT_SERVER_URL', '') or ''
+
+        if not api_key or not api_secret or not server_url:
+            return Response(
+                {
+                    'error': (
+                        'LiveKit konfiqurasiya edilməyib. '
+                        'Render-də LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_SERVER_URL təyin edin.'
+                    ),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        if not (server_url.startswith('wss://') or server_url.startswith('ws://')):
+            return Response(
+                {'error': 'LIVEKIT_SERVER_URL wss:// və ya ws:// ilə başlamalıdır.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         at = AccessToken(api_key=api_key, api_secret=api_secret)
         at.identity = identity
@@ -521,7 +539,7 @@ def livekit_token(request):
 
     return Response({
         'token': token_jwt,
-        'serverUrl': getattr(django_settings, 'LIVEKIT_SERVER_URL', ''),
+        'serverUrl': server_url,
         'role': 'teacher' if is_teacher else 'student',
         'identity': identity,
         'teacherName': teacher_name,
