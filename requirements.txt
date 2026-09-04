@@ -8,3 +8,5 @@ typing_extensions==4.16.0
 tzdata==2026.3
 yt-dlp==2026.8.19
 gunicorn==22.0.0
+Pillow==11.1.0
+whitenoise==6.8.0
