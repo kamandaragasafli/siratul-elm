@@ -82,22 +82,22 @@ def _ydl_extract(url: str) -> tuple[dict | None, str | None]:
             f'({sys.executable}) — .venv aktivləşdirib: pip install yt-dlp',
         )
 
-    opts = {
-        'extract_flat': 'in_playlist',
-        'quiet': True,
-        'no_warnings': True,
-        'skip_download': True,
-        'ignoreerrors': True,
-        'socket_timeout': 30,
-        'retries': 3,
-    }
+    from .ytdlp_opts import friendly_ytdlp_error, ytdlp_base_opts
+
+    opts = ytdlp_base_opts(
+        extract_flat='in_playlist',
+        skip_download=True,
+        ignoreerrors=True,
+        socket_timeout=30,
+        retries=3,
+    )
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
         return info, None
     except Exception as exc:
         logger.exception('yt-dlp extract failed for %s', url)
-        return None, f'YouTube oxunmadi: {exc}'
+        return None, friendly_ytdlp_error(exc)
 
 
 def fetch_channel_playlists(url: str) -> tuple[list[dict], str | None]:

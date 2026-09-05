@@ -125,6 +125,9 @@ LIVEKIT_API_SECRET = os.environ.get('LIVEKIT_API_SECRET', '').strip()
 LIVEKIT_SERVER_URL = os.environ.get('LIVEKIT_SERVER_URL', '').strip()
 # Müəllim kodları Django admin → «Canlı yayım müəllimləri» bölməsindədir.
 
+# YouTube yt-dlp bot yoxlaması — Netscape cookies.txt yolu (Render disk / secret file)
+YTDLP_COOKIES_FILE = os.environ.get('YTDLP_COOKIES_FILE', '').strip()
+
 # ── Telegram sual-cavab (tətbiqdən birbaşa göndərmə) ────────────────────────
 # Botu «Sirac sual» qrupuna admin kimi əlavə edin; chat ID-ni getUpdates ilə alın.
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')

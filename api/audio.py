@@ -9,6 +9,8 @@ from pathlib import Path
 from django.conf import settings
 from django.core.files import File
 
+from .ytdlp_opts import friendly_ytdlp_error, ytdlp_base_opts
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,20 +27,23 @@ def sync_series_lessons(series) -> dict:
     except ImportError:
         return {'created': 0, 'updated': 0, 'total': 0, 'error': 'yt-dlp yoxdur'}
 
-    opts = {
-        'extract_flat': 'in_playlist',
-        'quiet': True,
-        'no_warnings': True,
-        'skip_download': True,
-        'ignoreerrors': True,
-        'socket_timeout': 30,
-    }
+    opts = ytdlp_base_opts(
+        extract_flat='in_playlist',
+        skip_download=True,
+        ignoreerrors=True,
+        socket_timeout=30,
+    )
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception as exc:
         logger.exception('sync_series_lessons failed')
-        return {'created': 0, 'updated': 0, 'total': 0, 'error': str(exc)}
+        return {
+            'created': 0,
+            'updated': 0,
+            'total': 0,
+            'error': friendly_ytdlp_error(exc),
+        }
 
     if not info:
         return {'created': 0, 'updated': 0, 'total': 0, 'error': 'Playlist oxunmadi'}
@@ -123,18 +128,16 @@ def resolve_stream_url(
     except ImportError:
         return None, None, None, 'yt-dlp yoxdur'
 
-    opts = {
-        'format': 'bestaudio[ext=m4a]/bestaudio/best',
-        'quiet': True,
-        'no_warnings': True,
-        'skip_download': True,
-        'socket_timeout': 30,
-    }
+    opts = ytdlp_base_opts(
+        format='bestaudio[ext=m4a]/bestaudio/best',
+        skip_download=True,
+        socket_timeout=45,
+    )
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
     except Exception as exc:
-        return None, None, None, str(exc)
+        return None, None, None, friendly_ytdlp_error(exc)
 
     if not info:
         return None, None, None, 'Audio tapilmadi'
@@ -199,14 +202,12 @@ def ensure_audio_file(lesson) -> tuple[bool, str | None]:
     stem = lesson.youtube_id or f'lesson-{lesson.pk}'
     outtmpl = str(out_dir / f'{stem}.%(ext)s')
 
-    opts: dict = {
-        'format': 'bestaudio/best',
-        'outtmpl': outtmpl,
-        'quiet': True,
-        'no_warnings': True,
-        'socket_timeout': 120,
-        'retries': 3,
-    }
+    opts: dict = ytdlp_base_opts(
+        format='bestaudio/best',
+        outtmpl=outtmpl,
+        socket_timeout=120,
+        retries=5,
+    )
     if shutil.which('ffmpeg'):
         opts['postprocessors'] = [{
             'key': 'FFmpegExtractAudio',
@@ -221,7 +222,7 @@ def ensure_audio_file(lesson) -> tuple[bool, str | None]:
             info = ydl.extract_info(source, download=True)
     except Exception as exc:
         logger.exception('ensure_audio_file failed lesson=%s', lesson.pk)
-        return False, str(exc)
+        return False, friendly_ytdlp_error(exc)
 
     # Tapilan fayl (mp3 postprocessor və ya birbaşa m4a/webm)
     ext = (info or {}).get('ext') or 'mp3'
