@@ -390,8 +390,25 @@ class VideoLessonViewSet(viewsets.ReadOnlyModelViewSet):
 
         stream, duration, size_bytes, err = resolve_stream_url(lesson.url)
         if err or not stream:
+            # Canlı stream bloklanıbsa — serverə endirib fayldan ver
+            ok, prep_err = ensure_audio_file(lesson)
+            if ok:
+                lesson.refresh_from_db()
+                size = lesson_audio_size_bytes(lesson)
+                return Response(
+                    {
+                        'id': lesson.id,
+                        'title': lesson.title,
+                        'mode': 'file',
+                        'streamUrl': absolute(lesson.audio_file.url),
+                        'downloadUrl': absolute(lesson.audio_file.url),
+                        'durationSeconds': lesson.duration_seconds,
+                        'sizeBytes': size,
+                        'hasAudio': True,
+                    }
+                )
             return Response(
-                {'detail': err or 'Ses axi tapilmadi'},
+                {'detail': err or prep_err or 'Ses axi tapilmadi'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         if duration and not lesson.duration_seconds:

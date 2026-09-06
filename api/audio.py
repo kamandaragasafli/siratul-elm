@@ -140,24 +140,32 @@ def resolve_stream_url(
     except ImportError:
         return None, None, None, 'yt-dlp yoxdur'
 
-    # Play üçün yalnız sürətli klientlər (web bot yoxlamasına düşür)
-    opts = ytdlp_base_opts(
-        format='bestaudio[ext=m4a]/bestaudio/best',
-        skip_download=True,
-        socket_timeout=20,
-        retries=2,
-    )
-    opts['extractor_args'] = {
-        'youtube': {'player_client': ['android', 'ios']},
-    }
-    try:
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(youtube_url, download=False)
-    except Exception as exc:
-        return None, None, None, friendly_ytdlp_error(exc)
-
+    # Əvvəl sürətli klientlər; uğursuz olsa baza fallback (mweb/tv/web + cookies)
+    attempts: list[list[str]] = [
+        ['android', 'ios'],
+        ['android_creator', 'ios', 'mweb', 'tv'],
+        ['android', 'ios', 'mweb', 'tv', 'web'],
+    ]
+    last_err: str | None = None
+    info = None
+    for clients in attempts:
+        opts = ytdlp_base_opts(
+            format='bestaudio[ext=m4a]/bestaudio/best',
+            skip_download=True,
+            socket_timeout=25,
+            retries=2,
+        )
+        opts['extractor_args'] = {'youtube': {'player_client': clients}}
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(youtube_url, download=False)
+            if info:
+                break
+        except Exception as exc:
+            last_err = friendly_ytdlp_error(exc)
+            info = None
     if not info:
-        return None, None, None, 'Audio tapilmadi'
+        return None, None, None, last_err or 'Audio tapilmadi'
 
     stream = info.get('url')
     duration = info.get('duration')
