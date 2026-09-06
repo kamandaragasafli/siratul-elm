@@ -119,20 +119,37 @@ def _pick_filesize(info: dict | None) -> int | None:
     return None
 
 
+_STREAM_CACHE: dict[str, tuple[float, str, int | None, int | None]] = {}
+_STREAM_CACHE_TTL = 8 * 60  # saniyə
+
+
 def resolve_stream_url(
     youtube_url: str,
 ) -> tuple[str | None, int | None, int | None, str | None]:
     """Returns: stream_url, duration_sec, size_bytes, error"""
+    import time
+
+    cache_key = (youtube_url or '').strip()
+    now = time.time()
+    cached = _STREAM_CACHE.get(cache_key)
+    if cached and now - cached[0] < _STREAM_CACHE_TTL:
+        return cached[1], cached[2], cached[3], None
+
     try:
         import yt_dlp
     except ImportError:
         return None, None, None, 'yt-dlp yoxdur'
 
+    # Play üçün yalnız sürətli klientlər (web bot yoxlamasına düşür)
     opts = ytdlp_base_opts(
         format='bestaudio[ext=m4a]/bestaudio/best',
         skip_download=True,
-        socket_timeout=45,
+        socket_timeout=20,
+        retries=2,
     )
+    opts['extractor_args'] = {
+        'youtube': {'player_client': ['android', 'ios']},
+    }
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
@@ -157,6 +174,13 @@ def resolve_stream_url(
                         except (TypeError, ValueError):
                             size_bytes = None
                 break
+    if stream:
+        _STREAM_CACHE[cache_key] = (
+            now,
+            stream,
+            int(duration) if duration else None,
+            size_bytes,
+        )
     return stream, int(duration) if duration else None, size_bytes, None
 
 

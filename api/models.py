@@ -372,6 +372,12 @@ class QuranMealNote(models.Model):
         blank=True,
         help_text='Mətn sətirləri siyahısı (JSON massiv).',
     )
+    summaries = models.JSONField(
+        'Ayə xülasələri',
+        default=list,
+        blank=True,
+        help_text='[{"from":1,"to":15,"title":"...","text":"..."}] — ayə aralıqları.',
+    )
     message = models.TextField('Əsas mesaj', blank=True, default='')
     author = models.CharField('Müəllif', max_length=200, blank=True, default='')
     footnotes = models.JSONField(
@@ -422,12 +428,43 @@ class QuranMealNote(models.Model):
             self.ayah = None
         if not isinstance(self.paragraphs, list):
             self.paragraphs = []
+        if not isinstance(self.summaries, list):
+            self.summaries = []
         if not isinstance(self.footnotes, list):
             self.footnotes = []
         super().save(*args, **kwargs)
 
     def to_pack_entry(self) -> dict:
         entry: dict = {}
+        if (self.intro or '').strip():
+            entry['intro'] = self.intro.strip()
+        paras = []
+        for p in self.paragraphs or []:
+            text = str(p or '').strip()
+            if text:
+                paras.append(text)
+        if paras:
+            entry['paragraphs'] = paras
+        summaries = []
+        for raw in self.summaries or []:
+            if not isinstance(raw, dict):
+                continue
+            try:
+                frm = int(raw.get('from'))
+                to = int(raw.get('to'))
+            except (TypeError, ValueError):
+                continue
+            text = str(raw.get('text') or '').strip()
+            if frm < 1 or to < frm or not text:
+                continue
+            item = {'from': frm, 'to': to, 'text': text}
+            title = str(raw.get('title') or '').strip()
+            if title:
+                item['title'] = title
+            summaries.append(item)
+        if summaries:
+            summaries.sort(key=lambda x: (x['from'], x['to']))
+            entry['summaries'] = summaries
         if (self.message or '').strip():
             entry['message'] = self.message.strip()
         if (self.author or '').strip():

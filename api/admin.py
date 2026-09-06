@@ -622,6 +622,7 @@ class QuranMealNoteAdmin(admin.ModelAdmin):
         'ayah',
         'intro',
         'paragraphs',
+        'summaries',
         'message',
         'author',
         'footnotes',

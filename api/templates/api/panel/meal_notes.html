@@ -1,6 +1,6 @@
 {% extends "api/panel/base.html" %}
 {% block title %}Məal qısa məlumat — Sirac{% endblock %}
-{% block subtitle %}Qurani Kərim məal — qısa məlumat və hökmlər{% endblock %}
+{% block subtitle %}Qurani Kərim məal — surə məlumatı, ayə xülasələri və hökmlər{% endblock %}
 
 {% block content %}
 <div class="grid">
@@ -17,8 +17,9 @@
 <section class="form-panel">
   <h2>{% if form_id %}Redaktə #{{ form_id }}{% else %}Yeni qısa məlumat{% endif %}</h2>
   <p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.45">
+    Surə səviyyəsində: giriş + abzaslar (surə haqqında) və ayə aralığı xülasələri.
+    Ayə səviyyəsində: həmin ayənin qısa mesajı.
     Mətndə haşiyə üçün <code>[1]</code>, <code>[2]</code> yazın.
-    Hökm üçün haşiyə növünü «Hökm» seçin — tətbiqdə xüsusi nişanla açılır.
   </p>
   <form method="post">
     {% csrf_token %}
@@ -51,9 +52,66 @@
         <input type="text" name="author" value="{{ form_author }}" placeholder="Yunus Alihuseynli" />
       </div>
       <div class="field full">
+        <label>Surə haqqında (giriş)</label>
+        <textarea name="intro" style="min-height:90px" placeholder="Surənin ümumi məzmunu…">{{ form_intro }}</textarea>
+      </div>
+      <div class="field full">
+        <label>Əlavə abzaslar</label>
+        <textarea name="paragraphs" style="min-height:110px" placeholder="Hər abzas boş sətirlə ayrılır">{{ form_paragraphs }}</textarea>
+      </div>
+      <div class="field full">
         <label>Əsas mesaj</label>
         <textarea name="message" style="min-height:90px">{{ form_message }}</textarea>
       </div>
+    </div>
+
+    <div id="summaries-block" style="margin-top:18px">
+      <h2 style="margin-bottom:8px">Ayə xülasələri</h2>
+      <p class="muted" style="margin:0 0 10px;font-size:12px">Məsələn: 1–15, 16–28 — mövzu aralıqları.</p>
+      <div id="sum-rows">
+        {% for s in form_summaries %}
+        <div class="form-grid sum-row" style="margin-bottom:10px;align-items:end">
+          <div class="field" style="max-width:80px">
+            <label>Başlanğıc</label>
+            <input type="text" name="sum_from" value="{{ s.from }}" />
+          </div>
+          <div class="field" style="max-width:80px">
+            <label>Son</label>
+            <input type="text" name="sum_to" value="{{ s.to }}" />
+          </div>
+          <div class="field">
+            <label>Başlıq</label>
+            <input type="text" name="sum_title" value="{{ s.title }}" placeholder="opsional" />
+          </div>
+          <div class="field full">
+            <label>Xülasə</label>
+            <textarea name="sum_text" style="min-height:64px">{{ s.text }}</textarea>
+          </div>
+        </div>
+        {% empty %}
+        <div class="form-grid sum-row" style="margin-bottom:10px;align-items:end">
+          <div class="field" style="max-width:80px">
+            <label>Başlanğıc</label>
+            <input type="text" name="sum_from" value="" placeholder="1" />
+          </div>
+          <div class="field" style="max-width:80px">
+            <label>Son</label>
+            <input type="text" name="sum_to" value="" placeholder="15" />
+          </div>
+          <div class="field">
+            <label>Başlıq</label>
+            <input type="text" name="sum_title" value="" placeholder="opsional" />
+          </div>
+          <div class="field full">
+            <label>Xülasə</label>
+            <textarea name="sum_text" style="min-height:64px" placeholder="Boş buraxsanız bu sətir saxlanılmır"></textarea>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn" id="sum-add" style="background:rgba(255,255,255,0.12);color:var(--text);margin-top:4px">
+        + Xülasə
+      </button>
     </div>
 
     <div style="margin-top:18px">
@@ -122,7 +180,8 @@
     <thead>
       <tr>
         <th>Yer</th>
-        <th>Mesaj</th>
+        <th>Məlumat</th>
+        <th>Xülasə</th>
         <th>Haşiyə</th>
         <th>Status</th>
         <th></th>
@@ -135,10 +194,12 @@
           <strong>{% if n.ayah %}{{ n.surah_label }} — ayə {{ n.ayah }}{% else %}{{ n.surah_label }}{% endif %}</strong>
           <div class="muted" style="font-size:11px">{{ n.get_scope_display }}</div>
         </td>
-        <td style="max-width:320px">
-          {% if n.message %}<div>{{ n.message|truncatechars:100 }}</div>{% endif %}
+        <td style="max-width:280px">
+          {% if n.intro %}<div>{{ n.intro|truncatechars:80 }}</div>{% endif %}
+          {% if n.message %}<div class="muted" style="font-size:12px;margin-top:4px">{{ n.message|truncatechars:80 }}</div>{% endif %}
           {% if n.author %}<div class="muted" style="font-size:11px;margin-top:4px">{{ n.author }}</div>{% endif %}
         </td>
+        <td class="muted">{{ n.summaries|length }}</td>
         <td class="muted">{{ n.footnotes|length }}</td>
         <td>
           <span class="badge {% if not n.is_published %}off{% endif %}">
@@ -191,17 +252,40 @@
   </div>
 </template>
 
+<template id="sum-row-tpl">
+  <div class="form-grid sum-row" style="margin-bottom:10px;align-items:end">
+    <div class="field" style="max-width:80px">
+      <label>Başlanğıc</label>
+      <input type="text" name="sum_from" value="" />
+    </div>
+    <div class="field" style="max-width:80px">
+      <label>Son</label>
+      <input type="text" name="sum_to" value="" />
+    </div>
+    <div class="field">
+      <label>Başlıq</label>
+      <input type="text" name="sum_title" value="" placeholder="opsional" />
+    </div>
+    <div class="field full">
+      <label>Xülasə</label>
+      <textarea name="sum_text" style="min-height:64px"></textarea>
+    </div>
+  </div>
+</template>
+
 <script>
 (function () {
   var scope = document.getElementById('meal-scope');
   var ayahField = document.getElementById('ayah-field');
-  function syncAyah() {
-    if (!scope || !ayahField) return;
-    ayahField.style.display = scope.value === 'ayah' ? '' : 'none';
+  var sumBlock = document.getElementById('summaries-block');
+  function syncScope() {
+    if (!scope) return;
+    if (ayahField) ayahField.style.display = scope.value === 'ayah' ? '' : 'none';
+    if (sumBlock) sumBlock.style.display = scope.value === 'surah' ? '' : 'none';
   }
   if (scope) {
-    scope.addEventListener('change', syncAyah);
-    syncAyah();
+    scope.addEventListener('change', syncScope);
+    syncScope();
   }
 
   var addBtn = document.getElementById('fn-add');
@@ -218,6 +302,15 @@
       });
       if (inputs[0]) inputs[0].value = String(max + 1);
       rows.appendChild(node);
+    });
+  }
+
+  var sumAdd = document.getElementById('sum-add');
+  var sumRows = document.getElementById('sum-rows');
+  var sumTpl = document.getElementById('sum-row-tpl');
+  if (sumAdd && sumRows && sumTpl) {
+    sumAdd.addEventListener('click', function () {
+      sumRows.appendChild(sumTpl.content.cloneNode(true));
     });
   }
 })();

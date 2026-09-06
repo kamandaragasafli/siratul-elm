@@ -882,6 +882,41 @@ def _parse_meal_footnotes(request) -> list[dict]:
     return out
 
 
+def _parse_meal_paragraphs(request) -> list[str]:
+    raw = (request.POST.get('paragraphs') or '').strip()
+    if not raw:
+        return []
+    # Boş sətirlə ayrılan abzaslar; yoxdursa sətir-sətir
+    if '\n\n' in raw:
+        return [p.strip() for p in raw.split('\n\n') if p.strip()]
+    return [line.strip() for line in raw.splitlines() if line.strip()]
+
+
+def _parse_meal_summaries(request) -> list[dict]:
+    """POST: sum_from[], sum_to[], sum_title[], sum_text[]."""
+    frms = request.POST.getlist('sum_from')
+    tos = request.POST.getlist('sum_to')
+    titles = request.POST.getlist('sum_title')
+    texts = request.POST.getlist('sum_text')
+    out = []
+    for i, raw_from in enumerate(frms):
+        try:
+            frm = int(str(raw_from).strip())
+            to = int(str(tos[i] if i < len(tos) else '').strip())
+        except (TypeError, ValueError, IndexError):
+            continue
+        text = (texts[i] if i < len(texts) else '').strip()
+        if frm < 1 or to < frm or not text:
+            continue
+        item = {'from': frm, 'to': to, 'text': text}
+        title = (titles[i] if i < len(titles) else '').strip()
+        if title:
+            item['title'] = title
+        out.append(item)
+    out.sort(key=lambda x: (x['from'], x['to']))
+    return out
+
+
 def _handle_save_meal_note(request):
     note_id = (request.POST.get('id') or '').strip()
     scope = (request.POST.get('scope') or 'surah').strip()
@@ -903,13 +938,16 @@ def _handle_save_meal_note(request):
         if ayah < 1:
             return 'Ayə nömrəsi mütləqdir.'
 
+    intro = (request.POST.get('intro') or '').strip()
+    paragraphs = _parse_meal_paragraphs(request)
+    summaries = _parse_meal_summaries(request) if scope == QuranMealNote.SCOPE_SURAH else []
     message = (request.POST.get('message') or '').strip()
     author = (request.POST.get('author') or '').strip()
     footnotes = _parse_meal_footnotes(request)
     is_published = request.POST.get('is_published') == 'on'
 
-    if not (message or footnotes):
-        return 'Ən azı əsas mesaj və ya haşiyə/hökm lazımdır.'
+    if not (intro or paragraphs or summaries or message or footnotes):
+        return 'Ən azı surə məlumatı, xülasə, əsas mesaj və ya haşiyə/hökm lazımdır.'
 
     note = None
     if note_id.isdigit():
@@ -934,8 +972,9 @@ def _handle_save_meal_note(request):
     note.scope = scope
     note.surah = surah
     note.ayah = ayah
-    note.intro = ''
-    note.paragraphs = []
+    note.intro = intro
+    note.paragraphs = paragraphs
+    note.summaries = summaries
     note.message = message
     note.author = author
     note.footnotes = footnotes
@@ -1014,6 +1053,9 @@ def panel_meal_notes(request):
         ctx['form_scope'] = edit_note.scope
         ctx['form_surah'] = edit_note.surah
         ctx['form_ayah'] = edit_note.ayah or ''
+        ctx['form_intro'] = edit_note.intro or ''
+        ctx['form_paragraphs'] = '\n\n'.join(edit_note.paragraphs or [])
+        ctx['form_summaries'] = edit_note.summaries or []
         ctx['form_message'] = edit_note.message
         ctx['form_author'] = edit_note.author
         ctx['form_footnotes'] = edit_note.footnotes or []
@@ -1023,6 +1065,9 @@ def panel_meal_notes(request):
         ctx['form_scope'] = 'surah'
         ctx['form_surah'] = ''
         ctx['form_ayah'] = ''
+        ctx['form_intro'] = ''
+        ctx['form_paragraphs'] = ''
+        ctx['form_summaries'] = []
         ctx['form_message'] = ''
         ctx['form_author'] = ''
         ctx['form_footnotes'] = []
