@@ -142,9 +142,9 @@ def resolve_stream_url(
 
     # ios/android PO token tələb etmir — 2026.x-də ən stabil
     attempts: list[list[str]] = [
-        ['ios', 'android'],
-        ['tv_embedded', 'ios'],
-        ['android', 'tv_embedded', 'mweb'],
+        ['ios'],
+        ['android'],
+        ['tv_embedded'],
     ]
     last_err: str | None = None
     info = None
@@ -152,8 +152,8 @@ def resolve_stream_url(
         opts = ytdlp_base_opts(
             format='bestaudio/best',
             skip_download=True,
-            socket_timeout=25,
-            retries=2,
+            socket_timeout=15,
+            retries=1,
         )
         opts['extractor_args'] = {
             'youtube': {
