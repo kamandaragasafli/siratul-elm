@@ -5,6 +5,18 @@
 {% block content %}
 <h1 class="page-title">Dərslər</h1>
 
+{% if yt_cookies_ok %}
+<p class="muted" style="margin:0 0 16px;font-size:13px">
+  ✅ YouTube cookies yüklənib — «Səs hazırla» işləyə bilər.
+</p>
+{% else %}
+<p style="margin:0 0 16px;padding:12px 14px;border-radius:8px;background:#3b1f1f;color:#f5c2c2;font-size:13px;line-height:1.45">
+  ⚠️ YouTube cookies yoxdur. Render → Environment:
+  <code>YTDLP_COOKIES_FILE=/etc/secrets/cookies.txt</code>
+  + Secret Files-də <code>cookies.txt</code> olmalıdır. Sonra redeploy.
+</p>
+{% endif %}
+
 <section class="form-panel">
   <h2>Yeni dərs yarat</h2>
   <form method="post">
@@ -43,8 +55,10 @@
 </section>
 
 <section class="form-panel">
-  <h2>Silsilədən dərs sil</h2>
-  <p class="muted" style="margin:0 0 14px;font-size:13px">Silsilə silinmir — yalnız seçdiyiniz dərs silinir.</p>
+  <h2>Silsilə dərsləri</h2>
+  <p class="muted" style="margin:0 0 14px;font-size:13px">
+    «Səs hazırla» — YouTube-dan MP3 endirib serverə yazır. Sonra app bloksuz oxuyur.
+  </p>
 
   <form method="get" class="form-grid" style="margin-bottom:14px">
     <div class="field full">
@@ -64,19 +78,31 @@
     {% if series_lessons %}
     <table>
       <thead>
-        <tr><th>#</th><th>Dərs</th><th>Status</th><th></th></tr>
+        <tr><th>#</th><th>Dərs</th><th>Status</th><th>Səs</th><th></th></tr>
       </thead>
       <tbody>
         {% for l in series_lessons %}
         <tr>
           <td class="muted">{{ l.order }}</td>
-          <td>{{ l.title|truncatechars:70 }}</td>
+          <td>{{ l.title|truncatechars:60 }}</td>
           <td>
             {% if l.is_published %}<span class="badge">Yayınlı</span>
             {% else %}<span class="badge off">Gizli</span>{% endif %}
           </td>
           <td>
-            <form method="post" class="inline-form"
+            {% if l.audio_file %}<span class="badge">Hazır</span>
+            {% else %}<span class="badge off">Yox</span>{% endif %}
+          </td>
+          <td style="white-space:nowrap">
+            {% if not l.audio_file %}
+            <form method="post" class="inline-form" style="display:inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="prepare_audio" />
+              <input type="hidden" name="lesson_id" value="{{ l.id }}" />
+              <button type="submit" class="btn">Səs hazırla</button>
+            </form>
+            {% endif %}
+            <form method="post" class="inline-form" style="display:inline"
                   onsubmit="return confirm('«{{ l.title|escapejs }}» silinsin? Silsilə qalacaq.');">
               {% csrf_token %}
               <input type="hidden" name="action" value="delete_lesson" />

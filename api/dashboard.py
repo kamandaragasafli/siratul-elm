@@ -649,6 +649,32 @@ def panel_channels(request):
     return render(request, 'api/panel/channels.html', ctx)
 
 
+def _handle_prepare_lesson_audio(request):
+    from .audio import ensure_audio_file
+    from .ytdlp_opts import cookies_file_path
+
+    lesson_id = (request.POST.get('lesson_id') or '').strip()
+    if not lesson_id.isdigit():
+        return 'Dərs seçilməyib.'
+    lesson = VideoLesson.objects.select_related('series').filter(pk=lesson_id).first()
+    if not lesson:
+        return 'Dərs tapılmadı.'
+
+    cookie_path = cookies_file_path()
+    if not cookie_path:
+        return (
+            'YouTube cookies yoxdur. Render → Environment → '
+            'YTDLP_COOKIES_FILE=/etc/secrets/cookies.txt və Secret File əlavə edin.'
+        )
+
+    ok, err = ensure_audio_file(lesson)
+    if ok:
+        messages.success(request, f'«{lesson.title}» — səs hazırdır.')
+        request._redirect_series_id = lesson.series_id
+        return None
+    return err or 'Səs hazırlanmadı.'
+
+
 @staff_member_required
 @require_http_methods(['GET', 'POST'])
 def panel_lessons(request):
@@ -668,6 +694,13 @@ def panel_lessons(request):
                 if sid:
                     return redirect(f'/panel/lessons/?series={sid}')
                 return redirect('panel-lessons')
+        elif action == 'prepare_audio':
+            form_error = _handle_prepare_lesson_audio(request)
+            if not form_error:
+                sid = getattr(request, '_redirect_series_id', None) or selected_series_id
+                if sid:
+                    return redirect(f'/panel/lessons/?series={sid}')
+                return redirect('panel-lessons')
 
     selected_series = None
     series_lessons = []
@@ -680,6 +713,9 @@ def panel_lessons(request):
                 VideoLesson.objects.filter(series=selected_series).order_by('order', 'id')
             )
 
+    from .ytdlp_opts import cookies_file_path
+
+    cookie_ok = bool(cookies_file_path())
     ctx = _base_ctx('lessons', form_error)
     ctx.update(
         {
@@ -689,6 +725,7 @@ def panel_lessons(request):
             'selected_series': selected_series,
             'selected_series_id': selected_series_id if selected_series else '',
             'series_lessons': series_lessons,
+            'yt_cookies_ok': cookie_ok,
         }
     )
     return render(request, 'api/panel/lessons.html', ctx)

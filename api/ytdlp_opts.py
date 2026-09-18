@@ -127,6 +127,11 @@ def ytdlp_base_opts(*, use_cookies: bool = True, player_clients: list[str] | Non
         cookiefile = cookies_file_path()
         if cookiefile:
             opts['cookiefile'] = cookiefile
+            logger.info('yt-dlp cookies: %s', cookiefile)
+        else:
+            logger.warning(
+                'yt-dlp: use_cookies=True amma YTDLP_COOKIES_FILE / YTDLP_COOKIES yoxdur'
+            )
 
     opts.update(extra)
     return opts
