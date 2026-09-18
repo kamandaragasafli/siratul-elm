@@ -6,7 +6,7 @@ livekit-api>=0.7.1
 sqlparse==0.6.0
 typing_extensions==4.16.0
 tzdata==2026.3
-yt-dlp==2026.8.19
+yt-dlp>=2026.9.1
 gunicorn==22.0.0
 Pillow==11.1.0
 whitenoise==6.8.0

@@ -140,34 +140,39 @@ def resolve_stream_url(
     except ImportError:
         return None, None, None, 'yt-dlp yoxdur'
 
-    # ios/android PO token tələb etmir — 2026.x-də ən stabil
-    attempts: list[list[str]] = [
-        ['ios'],
-        ['android'],
-        ['tv_embedded'],
+    # Cookies bəzən pozur (page reload / no formats) — əvvəl cookies-siz
+    attempts: list[tuple[bool, list[str]]] = [
+        (False, ['android']),
+        (False, ['ios']),
+        (True, ['web_embedded', 'android']),
+        (True, ['android', 'ios']),
+        (False, ['tv_embedded']),
     ]
     last_err: str | None = None
     info = None
-    for clients in attempts:
+    for use_cookies, clients in attempts:
         opts = ytdlp_base_opts(
+            use_cookies=use_cookies,
+            player_clients=clients,
             format='bestaudio/best',
             skip_download=True,
-            socket_timeout=15,
+            socket_timeout=20,
             retries=1,
         )
-        opts['extractor_args'] = {
-            'youtube': {
-                'player_client': clients,
-                'player_skip': ['webpage', 'configs'],
-            }
-        }
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(youtube_url, download=False)
-            if info:
+            if info and (info.get('url') or info.get('formats')):
                 break
+            info = None
         except Exception as exc:
             last_err = friendly_ytdlp_error(exc)
+            logger.warning(
+                'resolve_stream_url fail cookies=%s clients=%s: %s',
+                use_cookies,
+                clients,
+                last_err,
+            )
             info = None
     if not info:
         return None, None, None, last_err or 'Audio tapilmadi'
@@ -239,26 +244,23 @@ def ensure_audio_file(lesson) -> tuple[bool, str | None]:
     stem = lesson.youtube_id or f'lesson-{lesson.pk}'
     outtmpl = str(out_dir / f'{stem}.%(ext)s')
 
-    client_attempts: list[list[str]] = [
-        ['ios', 'android'],
-        ['tv_embedded', 'ios'],
-        ['android', 'tv_embedded', 'mweb'],
+    client_attempts: list[tuple[bool, list[str]]] = [
+        (False, ['android']),
+        (False, ['ios']),
+        (True, ['web_embedded', 'android']),
+        (True, ['android', 'ios']),
     ]
     info = None
     last_err: str | None = None
-    for clients in client_attempts:
+    for use_cookies, clients in client_attempts:
         opts: dict = ytdlp_base_opts(
+            use_cookies=use_cookies,
+            player_clients=clients,
             format='bestaudio/best',
             outtmpl=outtmpl,
-            socket_timeout=120,
-            retries=5,
+            socket_timeout=90,
+            retries=3,
         )
-        opts['extractor_args'] = {
-            'youtube': {
-                'player_client': clients,
-                'player_skip': ['webpage', 'configs'],
-            }
-        }
         if shutil.which('ffmpeg'):
             opts['postprocessors'] = [{
                 'key': 'FFmpegExtractAudio',
@@ -266,7 +268,7 @@ def ensure_audio_file(lesson) -> tuple[bool, str | None]:
                 'preferredquality': '128',
             }]
         else:
-            opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best/ba/b'
+            opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best'
             opts['prefer_ffmpeg'] = False
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
@@ -277,8 +279,9 @@ def ensure_audio_file(lesson) -> tuple[bool, str | None]:
             last_err = friendly_ytdlp_error(exc)
             info = None
             logger.warning(
-                'ensure_audio_file attempt failed lesson=%s clients=%s: %s',
+                'ensure_audio_file fail lesson=%s cookies=%s clients=%s: %s',
                 lesson.pk,
+                use_cookies,
                 clients,
                 last_err,
             )

@@ -11,9 +11,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# ios/android PO token tələb etmir — 2026.x-də ən stabil seçim
-_DEFAULT_PLAYER_CLIENTS = ['ios', 'android', 'tv_embedded', 'mweb']
-
 _YT_HOSTS = (
     'youtube.com',
     'google.com',
@@ -35,16 +32,13 @@ def _media_root() -> Path:
 
 def _is_youtube_cookie_line(line: str) -> bool:
     if not line.strip() or line.startswith('#'):
-        return True  # header saxla
+        return True
     domain = line.split('\t', 1)[0].lower().lstrip('.')
     return any(h in domain for h in _YT_HOSTS)
 
 
 def _writable_cookie_copy(src: Path) -> str:
-    """
-    Render Secret Files read-only-dur; yt-dlp çıxışda cookie yazmağa çalışır → OSError 30.
-    Writable nüsxə + yalnız YouTube/Google sətirləri.
-    """
+    """Render Secret Files read-only — writable nüsxə + yalnız YT/Google."""
     dest_dir = _media_root() / 'audio'
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / 'ytdlp_cookies.txt'
@@ -65,16 +59,12 @@ def _writable_cookie_copy(src: Path) -> str:
         text = '\n'.join(filtered) + '\n'
         if not dest.exists() or dest.read_text(encoding='utf-8', errors='ignore') != text:
             dest.write_text(text, encoding='utf-8')
-        logger.info('cookies writable copy (%s youtube/google sətir) → %s', useful, dest)
+        logger.info('cookies writable copy (%s sətir) → %s', useful, dest)
     return str(dest)
 
 
-def _cookies_file() -> str | None:
-    """
-    Render / lokal:
-      YTDLP_COOKIES_FILE=/path/to/cookies.txt
-      və ya YTDLP_COOKIES=<Netscape cookies.txt məzmunu>
-    """
+def cookies_file_path() -> str | None:
+    """Mövcud cookies faylının writable yolu (yoxdursa None)."""
     path = os.environ.get('YTDLP_COOKIES_FILE', '').strip()
     media_root = _media_root()
     try:
@@ -86,15 +76,7 @@ def _cookies_file() -> str | None:
         pass
 
     if path and Path(path).is_file():
-        src = Path(path)
-        # /etc/secrets və digər read-only yollar → writable nüsxə
-        try:
-            with open(src, 'a', encoding='utf-8'):
-                pass
-            # Yazıla bilir — yenə də filter üçün nüsxə götür
-            return _writable_cookie_copy(src)
-        except OSError:
-            return _writable_cookie_copy(src)
+        return _writable_cookie_copy(Path(path))
 
     raw = (os.environ.get('YTDLP_COOKIES') or '').strip()
     if not raw:
@@ -103,29 +85,28 @@ def _cookies_file() -> str | None:
     cache = media_root / 'audio' / 'ytdlp_cookies.txt'
     cache.parent.mkdir(parents=True, exist_ok=True)
     text = raw.replace('\\n', '\n')
-    if cache.exists() and cache.read_text(encoding='utf-8', errors='ignore') == text:
-        return str(cache)
-    cache.write_text(text, encoding='utf-8')
+    if not cache.exists() or cache.read_text(encoding='utf-8', errors='ignore') != text:
+        cache.write_text(text, encoding='utf-8')
     return str(cache)
 
 
-def ytdlp_base_opts(**extra) -> dict:
+def ytdlp_base_opts(*, use_cookies: bool = True, player_clients: list[str] | None = None, **extra) -> dict:
     """Bütün YouTube extract/download üçün baza opts."""
-    clients = os.environ.get('YTDLP_PLAYER_CLIENTS', '').strip()
-    player_clients = (
-        [c.strip() for c in clients.split(',') if c.strip()]
-        if clients
-        else list(_DEFAULT_PLAYER_CLIENTS)
-    )
+    if player_clients is None:
+        env = os.environ.get('YTDLP_PLAYER_CLIENTS', '').strip()
+        player_clients = (
+            [c.strip() for c in env.split(',') if c.strip()]
+            if env
+            else ['android', 'ios']
+        )
 
     opts: dict = {
         'quiet': True,
         'no_warnings': True,
-        'socket_timeout': 45,
-        'retries': 5,
-        'fragment_retries': 5,
-        'extractor_retries': 3,
-        # format yoxlamasını söndür — "Requested format not available" bypass
+        'socket_timeout': 30,
+        'retries': 3,
+        'fragment_retries': 3,
+        'extractor_retries': 2,
         'check_formats': False,
         'http_headers': {
             'User-Agent': (
@@ -138,15 +119,14 @@ def ytdlp_base_opts(**extra) -> dict:
         'extractor_args': {
             'youtube': {
                 'player_client': player_clients,
-                # web client-i PO token olmadan deaktiv et
-                'player_skip': ['webpage', 'configs'],
             },
         },
     }
 
-    cookiefile = _cookies_file()
-    if cookiefile:
-        opts['cookiefile'] = cookiefile
+    if use_cookies:
+        cookiefile = cookies_file_path()
+        if cookiefile:
+            opts['cookiefile'] = cookiefile
 
     opts.update(extra)
     return opts
@@ -164,20 +144,29 @@ def friendly_ytdlp_error(exc: BaseException | str) -> str:
     ):
         return (
             'YouTube bot yoxlaması səsi blokladı. '
-            'Admin paneldən dərsə «Səs hazırla» basın və ya Render-ə YouTube cookies əlavə edin.'
+            'Admin paneldən dərsə «Səs hazırla» basın.'
         )
     if 'page needs to be reloaded' in low:
         return (
-            'YouTube müvəqqəti cavab vermədi (page reload). '
-            'Bir az sonra «Səs hazırla» ilə yenidən cəhd edin.'
+            'YouTube müvəqqəti cavab vermədi. '
+            'Admin paneldən «Səs hazırla» basın.'
+        )
+    if 'failed to extract any player response' in low:
+        return (
+            'YouTube player cavab vermədi (datacenter IP blok). '
+            'Admin paneldən «Səs hazırla» basın və ya cookies yeniləyin.'
+        )
+    if 'error code: 152' in low or 'watch video on youtube' in low:
+        return (
+            'Bu video yalnız YouTube tətbiqində açılır (kod 152). '
+            'Admin paneldən «Səs hazırla» ilə serverə yükləyin.'
         )
     if 'requested format is not available' in low:
-        return 'YouTube bu video üçün səs formatı vermədi. Yenidən cəhd edin.'
+        return 'YouTube səs formatı vermədi. Yenidən cəhd edin.'
     if 'private video' in low or 'login required' in low:
         return 'Video gizli və ya giriş tələb edir.'
     if 'video unavailable' in low:
         return 'Video tapılmadı və ya silinib.'
-    # Çox uzun yt-dlp stack-i kəs
     cleaned = re.sub(r'\s+', ' ', text).strip()
     if len(cleaned) > 220:
         cleaned = cleaned[:220] + '…'
