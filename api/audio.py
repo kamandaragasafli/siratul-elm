@@ -216,12 +216,12 @@ def lesson_audio_size_bytes(lesson) -> int | None:
     return None
 
 
-def ensure_audio_file(lesson) -> tuple[bool, str | None]:
+def ensure_audio_file(lesson, *, force: bool = False) -> tuple[bool, str | None]:
     """
     Dərsi səs faylı kimi media-ya endirir (telefona yükləmə / sabit stream).
     Returns: (ok, error)
     """
-    if lesson.audio_file and lesson.audio_file.name:
+    if not force and lesson.audio_file and lesson.audio_file.name:
         path = Path(lesson.audio_file.path)
         if path.exists() and path.stat().st_size > 0:
             return True, None

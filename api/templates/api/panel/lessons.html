@@ -94,14 +94,14 @@
             {% else %}<span class="badge off">Yox</span>{% endif %}
           </td>
           <td style="white-space:nowrap">
-            {% if not l.audio_file %}
             <form method="post" class="inline-form" style="display:inline">
               {% csrf_token %}
               <input type="hidden" name="action" value="prepare_audio" />
               <input type="hidden" name="lesson_id" value="{{ l.id }}" />
-              <button type="submit" class="btn">Səs hazırla</button>
+              <button type="submit" class="btn">
+                {% if l.audio_file %}Yenidən hazırla{% else %}Səs hazırla{% endif %}
+              </button>
             </form>
-            {% endif %}
             <form method="post" class="inline-form" style="display:inline"
                   onsubmit="return confirm('«{{ l.title|escapejs }}» silinsin? Silsilə qalacaq.');">
               {% csrf_token %}

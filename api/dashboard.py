@@ -667,7 +667,7 @@ def _handle_prepare_lesson_audio(request):
             'YTDLP_COOKIES_FILE=/etc/secrets/cookies.txt və Secret File əlavə edin.'
         )
 
-    ok, err = ensure_audio_file(lesson)
+    ok, err = ensure_audio_file(lesson, force=True)
     if ok:
         messages.success(request, f'«{lesson.title}» — səs hazırdır.')
         request._redirect_series_id = lesson.series_id
