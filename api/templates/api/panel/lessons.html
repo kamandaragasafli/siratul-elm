@@ -7,13 +7,13 @@
 
 {% if yt_cookies_ok %}
 <p class="muted" style="margin:0 0 16px;font-size:13px">
-  ✅ YouTube cookies yüklənib — «Səs hazırla» işləyə bilər.
+  ✅ YouTube cookies yüklənib. Avtomatik «Səs hazırla» işləməsə — aşağıdan <strong>MP3 yüklə</strong>.
 </p>
 {% else %}
 <p style="margin:0 0 16px;padding:12px 14px;border-radius:8px;background:#3b1f1f;color:#f5c2c2;font-size:13px;line-height:1.45">
-  ⚠️ YouTube cookies yoxdur. Render → Environment:
+  ⚠️ YouTube cookies yoxdur. Render Secret File +
   <code>YTDLP_COOKIES_FILE=/etc/secrets/cookies.txt</code>
-  + Secret Files-də <code>cookies.txt</code> olmalıdır. Sonra redeploy.
+  və ya hər dərsə əl ilə MP3 yükləyin.
 </p>
 {% endif %}
 
@@ -57,7 +57,8 @@
 <section class="form-panel">
   <h2>Silsilə dərsləri</h2>
   <p class="muted" style="margin:0 0 14px;font-size:13px">
-    «Səs hazırla» — YouTube-dan MP3 endirib serverə yazır. Sonra app bloksuz oxuyur.
+    YouTube bloklayırsa: videonu kompüterdə MP3-ə çevirib <strong>MP3 yüklə</strong> ilə serverə qoyun.
+    Sonra app bloksuz oxuyur.
   </p>
 
   <form method="get" class="form-grid" style="margin-bottom:14px">
@@ -84,7 +85,7 @@
         {% for l in series_lessons %}
         <tr>
           <td class="muted">{{ l.order }}</td>
-          <td>{{ l.title|truncatechars:60 }}</td>
+          <td>{{ l.title|truncatechars:55 }}</td>
           <td>
             {% if l.is_published %}<span class="badge">Yayınlı</span>
             {% else %}<span class="badge off">Gizli</span>{% endif %}
@@ -93,22 +94,33 @@
             {% if l.audio_file %}<span class="badge">Hazır</span>
             {% else %}<span class="badge off">Yox</span>{% endif %}
           </td>
-          <td style="white-space:nowrap">
-            <form method="post" class="inline-form" style="display:inline">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="prepare_audio" />
-              <input type="hidden" name="lesson_id" value="{{ l.id }}" />
-              <button type="submit" class="btn">
-                {% if l.audio_file %}Yenidən hazırla{% else %}Səs hazırla{% endif %}
-              </button>
-            </form>
-            <form method="post" class="inline-form" style="display:inline"
-                  onsubmit="return confirm('«{{ l.title|escapejs }}» silinsin? Silsilə qalacaq.');">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="delete_lesson" />
-              <input type="hidden" name="lesson_id" value="{{ l.id }}" />
-              <button type="submit" class="btn btn-danger">Sil</button>
-            </form>
+          <td>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <form method="post" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="prepare_audio" />
+                <input type="hidden" name="lesson_id" value="{{ l.id }}" />
+                <button type="submit" class="btn">
+                  {% if l.audio_file %}Yenidən hazırla{% else %}Səs hazırla{% endif %}
+                </button>
+              </form>
+              <form method="post" class="inline-form" enctype="multipart/form-data"
+                    style="display:flex;gap:4px;align-items:center">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="upload_audio" />
+                <input type="hidden" name="lesson_id" value="{{ l.id }}" />
+                <input type="file" name="audio" accept="audio/*,.mp3,.m4a,.aac,.opus,.webm,.ogg,.wav"
+                       required style="max-width:140px;font-size:11px;color:#ccc" />
+                <button type="submit" class="btn">MP3 yüklə</button>
+              </form>
+              <form method="post" class="inline-form"
+                    onsubmit="return confirm('«{{ l.title|escapejs }}» silinsin? Silsilə qalacaq.');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_lesson" />
+                <input type="hidden" name="lesson_id" value="{{ l.id }}" />
+                <button type="submit" class="btn btn-danger">Sil</button>
+              </form>
+            </div>
           </td>
         </tr>
         {% endfor %}

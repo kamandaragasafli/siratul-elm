@@ -9,7 +9,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.files import File
 
-from .ytdlp_opts import friendly_ytdlp_error, ytdlp_base_opts
+from .ytdlp_opts import cookies_file_path, friendly_ytdlp_error, ytdlp_base_opts
 
 logger = logging.getLogger(__name__)
 
@@ -244,12 +244,23 @@ def ensure_audio_file(lesson, *, force: bool = False) -> tuple[bool, str | None]
     stem = lesson.youtube_id or f'lesson-{lesson.pk}'
     outtmpl = str(out_dir / f'{stem}.%(ext)s')
 
-    client_attempts: list[tuple[bool, list[str]]] = [
-        (False, ['android']),
-        (False, ['ios']),
-        (True, ['web_embedded', 'android']),
-        (True, ['android', 'ios']),
-    ]
+    # Cookies ilə web əvvəl; cookies-siz android/ios
+    has_cookies = bool(cookies_file_path())
+    client_attempts: list[tuple[bool, list[str]]] = (
+        [
+            (True, ['web', 'web_embedded']),
+            (True, ['mweb', 'web_embedded']),
+            (True, ['android']),
+            (False, ['android']),
+            (False, ['ios']),
+        ]
+        if has_cookies
+        else [
+            (False, ['android']),
+            (False, ['ios']),
+            (False, ['tv_embedded']),
+        ]
+    )
     info = None
     last_err: str | None = None
     for use_cookies, clients in client_attempts:

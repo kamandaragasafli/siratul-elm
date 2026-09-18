@@ -664,7 +664,8 @@ def _handle_prepare_lesson_audio(request):
     if not cookie_path:
         return (
             'YouTube cookies yoxdur. Render → Environment → '
-            'YTDLP_COOKIES_FILE=/etc/secrets/cookies.txt və Secret File əlavə edin.'
+            'YTDLP_COOKIES_FILE=/etc/secrets/cookies.txt və Secret File əlavə edin. '
+            'Və ya aşağıdan MP3 yükləyin.'
         )
 
     ok, err = ensure_audio_file(lesson, force=True)
@@ -672,7 +673,41 @@ def _handle_prepare_lesson_audio(request):
         messages.success(request, f'«{lesson.title}» — səs hazırdır.')
         request._redirect_series_id = lesson.series_id
         return None
-    return err or 'Səs hazırlanmadı.'
+    return (
+        (err or 'Səs hazırlanmadı.')
+        + ' Cookies vaxtı keçmiş ola bilər — yenidən export edin, '
+        'və ya aşağıdan MP3 əl ilə yükləyin.'
+    )
+
+
+def _handle_upload_lesson_audio(request):
+    """YouTube bloklandıqda — əl ilə MP3/M4A yüklə."""
+    lesson_id = (request.POST.get('lesson_id') or '').strip()
+    audio = request.FILES.get('audio')
+    if not lesson_id.isdigit():
+        return 'Dərs seçilməyib.'
+    lesson = VideoLesson.objects.select_related('series').filter(pk=lesson_id).first()
+    if not lesson:
+        return 'Dərs tapılmadı.'
+    if not audio:
+        return 'Səs faylı seçin (mp3, m4a, aac, opus, webm).'
+
+    name = (audio.name or '').lower()
+    if not any(name.endswith(ext) for ext in ('.mp3', '.m4a', '.aac', '.opus', '.webm', '.ogg', '.wav')):
+        return 'Yalnız audio fayl qəbul olunur (mp3/m4a/aac/…).'
+
+    if lesson.audio_file:
+        try:
+            lesson.audio_file.delete(save=False)
+        except OSError:
+            pass
+
+    safe_name = f'lesson-{lesson.pk}-{name.split("/")[-1]}'
+    lesson.audio_file.save(safe_name, audio, save=False)
+    lesson.save(update_fields=['audio_file'])
+    messages.success(request, f'«{lesson.title}» — səs yükləndi ({audio.size // 1024} KB).')
+    request._redirect_series_id = lesson.series_id
+    return None
 
 
 @staff_member_required
@@ -696,6 +731,13 @@ def panel_lessons(request):
                 return redirect('panel-lessons')
         elif action == 'prepare_audio':
             form_error = _handle_prepare_lesson_audio(request)
+            if not form_error:
+                sid = getattr(request, '_redirect_series_id', None) or selected_series_id
+                if sid:
+                    return redirect(f'/panel/lessons/?series={sid}')
+                return redirect('panel-lessons')
+        elif action == 'upload_audio':
+            form_error = _handle_upload_lesson_audio(request)
             if not form_error:
                 sid = getattr(request, '_redirect_series_id', None) or selected_series_id
                 if sid:
