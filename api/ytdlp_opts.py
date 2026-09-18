@@ -11,8 +11,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Cookie ilə ən stabillər əvvəl; android cookies ilə tez-tez «page needs reload» verir
-_DEFAULT_PLAYER_CLIENTS = ['web', 'mweb', 'tv', 'web_safari', 'ios']
+# ios/android PO token tələb etmir — 2026.x-də ən stabil seçim
+_DEFAULT_PLAYER_CLIENTS = ['ios', 'android', 'tv_embedded', 'mweb']
 
 _YT_HOSTS = (
     'youtube.com',
@@ -125,6 +125,8 @@ def ytdlp_base_opts(**extra) -> dict:
         'retries': 5,
         'fragment_retries': 5,
         'extractor_retries': 3,
+        # format yoxlamasını söndür — "Requested format not available" bypass
+        'check_formats': False,
         'http_headers': {
             'User-Agent': (
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -136,6 +138,8 @@ def ytdlp_base_opts(**extra) -> dict:
         'extractor_args': {
             'youtube': {
                 'player_client': player_clients,
+                # web client-i PO token olmadan deaktiv et
+                'player_skip': ['webpage', 'configs'],
             },
         },
     }

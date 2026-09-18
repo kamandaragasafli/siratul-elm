@@ -140,22 +140,27 @@ def resolve_stream_url(
     except ImportError:
         return None, None, None, 'yt-dlp yoxdur'
 
-    # Cookie ilə web/mweb; android cookies-lə «page needs reload» verir
+    # ios/android PO token tələb etmir — 2026.x-də ən stabil
     attempts: list[list[str]] = [
-        ['web', 'mweb'],
-        ['tv', 'web_safari', 'ios'],
-        ['web', 'mweb', 'tv', 'ios'],
+        ['ios', 'android'],
+        ['tv_embedded', 'ios'],
+        ['android', 'tv_embedded', 'mweb'],
     ]
     last_err: str | None = None
     info = None
     for clients in attempts:
         opts = ytdlp_base_opts(
-            format='bestaudio[ext=m4a]/bestaudio/best/ba/b',
+            format='bestaudio/best',
             skip_download=True,
             socket_timeout=25,
             retries=2,
         )
-        opts['extractor_args'] = {'youtube': {'player_client': clients}}
+        opts['extractor_args'] = {
+            'youtube': {
+                'player_client': clients,
+                'player_skip': ['webpage', 'configs'],
+            }
+        }
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(youtube_url, download=False)
@@ -235,20 +240,25 @@ def ensure_audio_file(lesson) -> tuple[bool, str | None]:
     outtmpl = str(out_dir / f'{stem}.%(ext)s')
 
     client_attempts: list[list[str]] = [
-        ['web', 'mweb'],
-        ['tv', 'web_safari', 'ios'],
-        ['web', 'mweb', 'tv', 'ios'],
+        ['ios', 'android'],
+        ['tv_embedded', 'ios'],
+        ['android', 'tv_embedded', 'mweb'],
     ]
     info = None
     last_err: str | None = None
     for clients in client_attempts:
         opts: dict = ytdlp_base_opts(
-            format='bestaudio/best/ba/b',
+            format='bestaudio/best',
             outtmpl=outtmpl,
             socket_timeout=120,
             retries=5,
         )
-        opts['extractor_args'] = {'youtube': {'player_client': clients}}
+        opts['extractor_args'] = {
+            'youtube': {
+                'player_client': clients,
+                'player_skip': ['webpage', 'configs'],
+            }
+        }
         if shutil.which('ffmpeg'):
             opts['postprocessors'] = [{
                 'key': 'FFmpegExtractAudio',
