@@ -14,7 +14,6 @@ from api.dashboard import (
     panel_lessons,
     panel_live_lessons,
     panel_logout,
-    panel_meal_notes,
     panel_support,
 )
 
@@ -28,7 +27,6 @@ urlpatterns = [
     path('panel/channels/', panel_channels, name='panel-channels'),
     path('panel/lessons/', panel_lessons, name='panel-lessons'),
     path('panel/live-lessons/', panel_live_lessons, name='panel-live-lessons'),
-    path('panel/meal-notes/', panel_meal_notes, name='panel-meal-notes'),
     path('panel/support/', panel_support, name='panel-support'),
     path('panel/logout/', panel_logout, name='panel-logout'),
     path('admin/', admin.site.urls),

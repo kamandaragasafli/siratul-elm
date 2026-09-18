@@ -7,6 +7,11 @@ def book_cover_upload_to(instance, filename: str) -> str:
     return f'book-covers/{safe_id}.{ext}'
 
 
+def book_pdf_upload_to(instance, filename: str) -> str:
+    safe_id = (instance.public_id or 'book').replace('/', '-')[:80]
+    return f'book-pdfs/{safe_id}.pdf'
+
+
 class Book(models.Model):
     LANGUAGE_CHOICES = [
         ('az', 'Azərbaycan'),
@@ -18,6 +23,10 @@ class Book(models.Model):
         ('manual', 'Manual'),
         ('import', 'Import'),
         ('api', 'API'),
+    ]
+    FORMAT_CHOICES = [
+        ('text', 'Mətn'),
+        ('pdf', 'PDF'),
     ]
 
     public_id = models.CharField(max_length=120, unique=True, db_index=True)
@@ -31,6 +40,14 @@ class Book(models.Model):
         blank=True,
         null=True,
     )
+    format = models.CharField(max_length=8, choices=FORMAT_CHOICES, default='text')
+    pdf_file = models.FileField(
+        upload_to=book_pdf_upload_to,
+        blank=True,
+        null=True,
+        help_text='PDF oxucu üçün fayl (format=pdf olanda).',
+    )
+    pdf_page_count = models.PositiveIntegerField(blank=True, null=True)
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='api')
     topics = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

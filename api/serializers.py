@@ -12,18 +12,46 @@ def book_cover_url(book: Book, request) -> str | None:
     return url
 
 
+def book_pdf_url(book: Book, request) -> str | None:
+    if not book.pdf_file:
+        return None
+    url = book.pdf_file.url
+    if request is not None:
+        return request.build_absolute_uri(url)
+    return url
+
+
 class ChapterSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source='public_id')
+    page = serializers.SerializerMethodField()
 
     class Meta:
         model = Chapter
-        fields = ['id', 'title', 'content', 'blocks']
+        fields = ['id', 'title', 'content', 'blocks', 'page']
+
+    def get_page(self, obj):
+        # PDF bookmark səhifəsi blocks-da saxlana bilər: {"page": N}
+        if isinstance(obj.blocks, dict) and obj.blocks.get('page'):
+            try:
+                return int(obj.blocks['page'])
+            except (TypeError, ValueError):
+                return None
+        if isinstance(obj.blocks, list) and obj.blocks:
+            first = obj.blocks[0]
+            if isinstance(first, dict) and first.get('type') == 'pdfPage':
+                try:
+                    return int(first.get('page') or 0) or None
+                except (TypeError, ValueError):
+                    return None
+        return None
 
 
 class BookSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source='public_id')
     coverTone = serializers.IntegerField(source='cover_tone')
     coverUrl = serializers.SerializerMethodField()
+    pdfUrl = serializers.SerializerMethodField()
+    pdfPageCount = serializers.IntegerField(source='pdf_page_count', allow_null=True)
     createdAt = serializers.DateTimeField(source='created_at', format='iso-8601')
     chapters = ChapterSerializer(many=True, read_only=True)
 
@@ -37,6 +65,9 @@ class BookSerializer(serializers.ModelSerializer):
             'language',
             'coverTone',
             'coverUrl',
+            'format',
+            'pdfUrl',
+            'pdfPageCount',
             'chapters',
             'createdAt',
             'source',
@@ -46,11 +77,16 @@ class BookSerializer(serializers.ModelSerializer):
     def get_coverUrl(self, obj):
         return book_cover_url(obj, self.context.get('request'))
 
+    def get_pdfUrl(self, obj):
+        return book_pdf_url(obj, self.context.get('request'))
+
 
 class BookListSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source='public_id')
     coverTone = serializers.IntegerField(source='cover_tone')
     coverUrl = serializers.SerializerMethodField()
+    pdfUrl = serializers.SerializerMethodField()
+    pdfPageCount = serializers.IntegerField(source='pdf_page_count', allow_null=True)
     createdAt = serializers.DateTimeField(source='created_at', format='iso-8601')
     chapterCount = serializers.SerializerMethodField()
 
@@ -64,6 +100,9 @@ class BookListSerializer(serializers.ModelSerializer):
             'language',
             'coverTone',
             'coverUrl',
+            'format',
+            'pdfUrl',
+            'pdfPageCount',
             'createdAt',
             'source',
             'topics',
@@ -76,6 +115,8 @@ class BookListSerializer(serializers.ModelSerializer):
     def get_coverUrl(self, obj):
         return book_cover_url(obj, self.context.get('request'))
 
+    def get_pdfUrl(self, obj):
+        return book_pdf_url(obj, self.context.get('request'))
 
 class VideoLessonSerializer(serializers.ModelSerializer):
     hasAudio = serializers.SerializerMethodField()

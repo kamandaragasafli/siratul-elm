@@ -24,8 +24,7 @@ from .chapter_blocks import (
     parse_footnote_entries,
     plain_to_blocks,
 )
-from .models import Book, Chapter, QuranMealNote, SupportMessage, TelegramLiveLesson, VideoChannel, VideoLesson, VideoSeries
-from .surah_meta import surah_list, surah_name_az
+from .models import Book, Chapter, SupportMessage, TelegramLiveLesson, VideoChannel, VideoLesson, VideoSeries
 from .youtube import fetch_youtube_title, sync_channel_playlists
 
 
@@ -55,6 +54,7 @@ def _base_ctx(nav: str, form_error=None):
         'now': timezone.now(),
         'nav': nav,
         'form_error': form_error,
+        'support_unread': SupportMessage.objects.filter(is_read=False).count(),
     }
 
 
@@ -77,8 +77,6 @@ def _stats():
         'lessons_with_audio': lessons.exclude(audio_file='').exclude(audio_file=None).count(),
         'support': support.count(),
         'support_unread': support.filter(is_read=False).count(),
-        'meal_notes': QuranMealNote.objects.count(),
-        'meal_notes_published': QuranMealNote.objects.filter(is_published=True).count(),
     }
 
 
@@ -313,6 +311,61 @@ def _handle_create_book(request):
     return None
 
 
+def _handle_create_pdf_book(request):
+    title = (request.POST.get('title') or '').strip()
+    author = (request.POST.get('author') or '').strip() or 'PDF'
+    description = (request.POST.get('description') or '').strip()
+    language = (request.POST.get('language') or 'az').strip()[:8]
+    topics_raw = (request.POST.get('topics') or '').strip()
+    published = request.POST.get('is_published') == 'on'
+    cover = request.FILES.get('cover_image')
+    pdf = request.FILES.get('pdf_file')
+
+    if not title:
+        return 'Kitab başlığı lazımdır.'
+    if not pdf:
+        return 'PDF faylı seçin.'
+    name = (getattr(pdf, 'name', '') or '').lower()
+    ctype = (getattr(pdf, 'content_type', '') or '').lower()
+    if not (name.endswith('.pdf') or 'pdf' in ctype):
+        return 'Yalnız PDF faylı yüklənə bilər.'
+    if language not in ('az', 'ar', 'en'):
+        language = 'az'
+    if cover and not (cover.content_type or '').startswith('image/'):
+        return 'Qapaq yalnız şəkil faylı ola bilər (JPG, PNG, WebP).'
+
+    topics = [t.strip() for t in topics_raw.split(',') if t.strip()][:20]
+    if 'pdf' not in [t.lower() for t in topics]:
+        topics = ['pdf', *topics][:20]
+
+    public_id = _slug_id('pdf', title)
+    while Book.objects.filter(public_id=public_id).exists():
+        public_id = _slug_id('pdf', title)
+
+    book = Book.objects.create(
+        public_id=public_id,
+        title=title,
+        author=author,
+        description=description or 'PDF kitab — tətbiqdə oxucu ilə açılır.',
+        language=language,
+        cover_tone=Book.objects.count() % 6,
+        source='manual',
+        topics=topics,
+        is_published=published,
+        format='pdf',
+    )
+    book.pdf_file = pdf
+    update_fields = ['pdf_file']
+    if cover:
+        book.cover_image = cover
+        update_fields.append('cover_image')
+    book.save(update_fields=update_fields)
+
+    messages.success(request, f'PDF kitab əlavə olundu: {book.title}')
+    request._redirect_book_id = book.id
+    return None
+
+
 def _handle_create_chapter(request):
     book_id = (request.POST.get('book_id') or '').strip()
     title = (request.POST.get('title') or '').strip()
@@ -471,6 +524,10 @@ def panel_books(request):
                 bid = getattr(request, '_redirect_book_id', None)
                 if bid:
                     return redirect(f'/panel/chapters/?book={bid}')
+                return redirect('panel-books')
+        elif action == 'create_pdf_book':
+            form_error = _handle_create_pdf_book(request)
+            if not form_error:
                 return redirect('panel-books')
         elif action == 'update_book_cover':
             form_error = _handle_update_book_cover(request)
@@ -937,222 +994,6 @@ def panel_support(request):
     ctx['filter'] = filter_q
     ctx['stats'] = _stats()
     return render(request, 'api/panel/support.html', ctx)
-
-
-def _parse_meal_footnotes(request) -> list[dict]:
-    """POST-dan haşiyə sətirləri: fn_n[], fn_text[], fn_kind[]."""
-    ns = request.POST.getlist('fn_n')
-    texts = request.POST.getlist('fn_text')
-    kinds = request.POST.getlist('fn_kind')
-    out = []
-    for i, raw_n in enumerate(ns):
-        try:
-            n = int(str(raw_n).strip())
-        except (TypeError, ValueError):
-            continue
-        text = (texts[i] if i < len(texts) else '').strip()
-        kind = (kinds[i] if i < len(kinds) else 'note').strip().lower()
-        if kind not in ('note', 'hukm'):
-            kind = 'note'
-        if n < 1 or not text:
-            continue
-        out.append({'n': n, 'text': text, 'kind': kind})
-    out.sort(key=lambda x: x['n'])
-    return out
-
-
-def _parse_meal_paragraphs(request) -> list[str]:
-    raw = (request.POST.get('paragraphs') or '').strip()
-    if not raw:
-        return []
-    # Boş sətirlə ayrılan abzaslar; yoxdursa sətir-sətir
-    if '\n\n' in raw:
-        return [p.strip() for p in raw.split('\n\n') if p.strip()]
-    return [line.strip() for line in raw.splitlines() if line.strip()]
-
-
-def _parse_meal_summaries(request) -> list[dict]:
-    """POST: sum_from[], sum_to[], sum_title[], sum_text[]."""
-    frms = request.POST.getlist('sum_from')
-    tos = request.POST.getlist('sum_to')
-    titles = request.POST.getlist('sum_title')
-    texts = request.POST.getlist('sum_text')
-    out = []
-    for i, raw_from in enumerate(frms):
-        try:
-            frm = int(str(raw_from).strip())
-            to = int(str(tos[i] if i < len(tos) else '').strip())
-        except (TypeError, ValueError, IndexError):
-            continue
-        text = (texts[i] if i < len(texts) else '').strip()
-        if frm < 1 or to < frm or not text:
-            continue
-        item = {'from': frm, 'to': to, 'text': text}
-        title = (titles[i] if i < len(titles) else '').strip()
-        if title:
-            item['title'] = title
-        out.append(item)
-    out.sort(key=lambda x: (x['from'], x['to']))
-    return out
-
-
-def _handle_save_meal_note(request):
-    note_id = (request.POST.get('id') or '').strip()
-    scope = (request.POST.get('scope') or 'surah').strip()
-    if scope not in (QuranMealNote.SCOPE_SURAH, QuranMealNote.SCOPE_AYAH):
-        return 'Səviyyə yanlışdır.'
-    try:
-        surah = int((request.POST.get('surah') or '').strip())
-    except ValueError:
-        return 'Surə seçin.'
-    if surah < 1 or surah > 114:
-        return 'Surə seçimi yanlışdır.'
-
-    ayah = None
-    if scope == QuranMealNote.SCOPE_AYAH:
-        try:
-            ayah = int((request.POST.get('ayah') or '').strip())
-        except ValueError:
-            return 'Ayə nömrəsi yanlışdır.'
-        if ayah < 1:
-            return 'Ayə nömrəsi mütləqdir.'
-
-    intro = (request.POST.get('intro') or '').strip()
-    paragraphs = _parse_meal_paragraphs(request)
-    summaries = _parse_meal_summaries(request) if scope == QuranMealNote.SCOPE_SURAH else []
-    message = (request.POST.get('message') or '').strip()
-    author = (request.POST.get('author') or '').strip()
-    footnotes = _parse_meal_footnotes(request)
-    is_published = request.POST.get('is_published') == 'on'
-
-    if not (intro or paragraphs or summaries or message or footnotes):
-        return 'Ən azı surə məlumatı, xülasə, əsas mesaj və ya haşiyə/hökm lazımdır.'
-
-    note = None
-    if note_id.isdigit():
-        note = QuranMealNote.objects.filter(pk=int(note_id)).first()
-        if not note:
-            return 'Qeyd tapılmadı.'
-
-    clash_qs = QuranMealNote.objects.all()
-    if note:
-        clash_qs = clash_qs.exclude(pk=note.pk)
-    name = surah_name_az(surah)
-    if scope == QuranMealNote.SCOPE_SURAH:
-        if clash_qs.filter(surah=surah, ayah__isnull=True).exists():
-            return f'«{name}» üçün qısa məlumat artıq var.'
-    else:
-        if clash_qs.filter(surah=surah, ayah=ayah).exists():
-            return f'«{name}» {ayah} üçün qısa məlumat artıq var.'
-
-    if note is None:
-        note = QuranMealNote()
-
-    note.scope = scope
-    note.surah = surah
-    note.ayah = ayah
-    note.intro = intro
-    note.paragraphs = paragraphs
-    note.summaries = summaries
-    note.message = message
-    note.author = author
-    note.footnotes = footnotes
-    note.is_published = is_published
-    note.save()
-    messages.success(request, f'Saxlanıldı: {name}' + (f' {ayah}' if ayah else ''))
-    request._redirect_meal_note_id = note.id
-    return None
-
-
-def _handle_delete_meal_note(request):
-    note_id = (request.POST.get('id') or '').strip()
-    note = QuranMealNote.objects.filter(pk=note_id).first() if note_id.isdigit() else None
-    if not note:
-        return 'Qeyd tapılmadı.'
-    label = str(note)
-    note.delete()
-    messages.success(request, f'Silindi: {label}')
-    return None
-
-
-def _handle_toggle_meal_note(request):
-    note_id = (request.POST.get('id') or '').strip()
-    note = QuranMealNote.objects.filter(pk=note_id).first() if note_id.isdigit() else None
-    if not note:
-        return 'Qeyd tapılmadı.'
-    note.is_published = not note.is_published
-    note.save(update_fields=['is_published', 'updated_at'])
-    messages.success(
-        request,
-        f'{"Yayınlandı" if note.is_published else "Gizlədildi"}: {note}',
-    )
-    return None
-
-
-@staff_member_required
-@require_http_methods(['GET', 'POST'])
-def panel_meal_notes(request):
-    form_error = None
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'save_meal_note':
-            form_error = _handle_save_meal_note(request)
-            if not form_error:
-                nid = getattr(request, '_redirect_meal_note_id', None)
-                if nid:
-                    return redirect(f'/panel/meal-notes/?edit={nid}')
-                return redirect('panel-meal-notes')
-        elif action == 'delete_meal_note':
-            form_error = _handle_delete_meal_note(request)
-            if not form_error:
-                return redirect('panel-meal-notes')
-        elif action == 'toggle_meal_note':
-            form_error = _handle_toggle_meal_note(request)
-            if not form_error:
-                return redirect('panel-meal-notes')
-        else:
-            form_error = 'Naməlum əməliyyat.'
-
-    edit_id = (request.GET.get('edit') or '').strip()
-    edit_note = (
-        QuranMealNote.objects.filter(pk=int(edit_id)).first()
-        if edit_id.isdigit()
-        else None
-    )
-
-    ctx = _base_ctx('meal-notes', form_error)
-    notes = list(QuranMealNote.objects.all()[:300])
-    for n in notes:
-        n.surah_label = surah_name_az(n.surah)
-    ctx['notes'] = notes
-    ctx['surah_choices'] = surah_list()
-    ctx['edit_note'] = edit_note
-    ctx['stats'] = _stats()
-    if edit_note:
-        ctx['form_scope'] = edit_note.scope
-        ctx['form_surah'] = edit_note.surah
-        ctx['form_ayah'] = edit_note.ayah or ''
-        ctx['form_intro'] = edit_note.intro or ''
-        ctx['form_paragraphs'] = '\n\n'.join(edit_note.paragraphs or [])
-        ctx['form_summaries'] = edit_note.summaries or []
-        ctx['form_message'] = edit_note.message
-        ctx['form_author'] = edit_note.author
-        ctx['form_footnotes'] = edit_note.footnotes or []
-        ctx['form_published'] = edit_note.is_published
-        ctx['form_id'] = edit_note.id
-    else:
-        ctx['form_scope'] = 'surah'
-        ctx['form_surah'] = ''
-        ctx['form_ayah'] = ''
-        ctx['form_intro'] = ''
-        ctx['form_paragraphs'] = ''
-        ctx['form_summaries'] = []
-        ctx['form_message'] = ''
-        ctx['form_author'] = ''
-        ctx['form_footnotes'] = []
-        ctx['form_published'] = True
-        ctx['form_id'] = ''
-    return render(request, 'api/panel/meal_notes.html', ctx)
 
 
 @staff_member_required

@@ -1,6 +1,7 @@
 {% extends "api/panel/base.html" %}
 {% block title %}Ana — Sirac{% endblock %}
 {% block subtitle %}Ana səhifə{% endblock %}
+{% block page_heading %}Ana səhifə{% endblock %}
 
 {% block content %}
 <div class="grid">
@@ -8,6 +9,11 @@
     <div class="n">{{ stats.books }}</div>
     <div class="l">Kitab</div>
     <div class="sub">{{ stats.books_published }} yayınlı · {{ stats.chapters }} fəsil</div>
+    {% if stats.books %}
+    <div class="progress-track">
+      <div class="progress-fill" style="width:{% widthratio stats.books_published stats.books 100 %}%"></div>
+    </div>
+    {% endif %}
   </div>
   <div class="stat">
     <div class="n">{{ stats.channels }}</div>
@@ -23,6 +29,11 @@
     <div class="n">{{ stats.lessons }}</div>
     <div class="l">Dərs</div>
     <div class="sub">{{ stats.lessons_with_audio }} səs faylı</div>
+    {% if stats.lessons %}
+    <div class="progress-track">
+      <div class="progress-fill" style="width:{% widthratio stats.lessons_with_audio stats.lessons 100 %}%;background:var(--blue)"></div>
+    </div>
+    {% endif %}
   </div>
   <div class="stat">
     <div class="n">{{ stats.support_unread }}</div>
@@ -31,52 +42,90 @@
   </div>
 </div>
 
-<div class="cards">
-  <a class="card" href="{% url 'panel-books' %}">
-    <h3>Kitablar</h3>
-    <p>Siyahı, JSON sinxron, yayın statusu.</p>
-  </a>
-  <a class="card" href="{% url 'panel-chapters' %}">
-    <h3>Fəsillər</h3>
-    <p>Hərf xətalarını düzəlt, mətn redaktə et.</p>
-  </a>
-  <a class="card" href="{% url 'panel-channels' %}">
-    <h3>Kanallar</h3>
-    <p>Yeni kanal, playlist sinxronu, siyahı.</p>
-  </a>
-  <a class="card" href="{% url 'panel-lessons' %}">
-    <h3>Dərslər</h3>
-    <p>Yeni dərs əlavə et, silsilədən dərs sil.</p>
-  </a>
-  <a class="card" href="{% url 'panel-live-lessons' %}">
-    <h3>Canlı (Telegram)</h3>
-    <p>Cədvəl, link, avtomatik status.</p>
-  </a>
-  <a class="card" href="{% url 'panel-meal-notes' %}">
-    <h3>Məal qısa məlumat</h3>
-    <p>Surə/ayə qeydləri və hökm haşiyələri.</p>
-  </a>
-  <a class="card" href="{% url 'panel-support' %}">
-    <h3>Dəstək</h3>
-    <p>Tətbiqdən gələn yardım mesajları.</p>
-  </a>
+<div class="dash-row">
+  <section class="panel" style="margin:0">
+    <h2>Tez keçidlər</h2>
+    <div class="cards" style="margin:0">
+      <a class="card" href="{% url 'panel-books' %}">
+        <div class="card-ico" style="background:#e8f1fe">📚</div>
+        <h3>Kitablar</h3>
+        <p>Siyahı, JSON sinxron, yayın statusu.</p>
+      </a>
+      <a class="card" href="{% url 'panel-chapters' %}">
+        <div class="card-ico" style="background:#eef9e0">✏️</div>
+        <h3>Fəsillər</h3>
+        <p>Hərf xətalarını düzəlt, mətn redaktə et.</p>
+      </a>
+      <a class="card" href="{% url 'panel-channels' %}">
+        <div class="card-ico" style="background:#fff0e8">▶️</div>
+        <h3>Kanallar</h3>
+        <p>Yeni kanal, playlist sinxronu.</p>
+      </a>
+      <a class="card" href="{% url 'panel-lessons' %}">
+        <div class="card-ico" style="background:#f3eeff">🎧</div>
+        <h3>Dərslər</h3>
+        <p>Yeni dərs əlavə et, səs hazırla.</p>
+      </a>
+      <a class="card" href="{% url 'panel-live-lessons' %}">
+        <div class="card-ico" style="background:#ffe8f0">📡</div>
+        <h3>Canlı</h3>
+        <p>Telegram cədvəli və linklər.</p>
+      </a>
+    </div>
+  </section>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="cta-banner">
+      <h3>PDF kitab əlavə et</h3>
+      <p>Panel-dən PDF yükləyin — tətbiqdə avtomatik görünür.</p>
+      <a href="{% url 'panel-books' %}#yeni-pdf">Yüklə</a>
+    </div>
+    <section class="panel" style="margin:0;flex:1">
+      <h2>Status</h2>
+      <div class="queue-item">
+        <div class="queue-ico" style="background:#e8f1fe">📖</div>
+        <div class="queue-meta">
+          <strong>Yayınlı kitablar</strong>
+          <span>{{ stats.books_published }} / {{ stats.books }}</span>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:{% if stats.books %}{% widthratio stats.books_published stats.books 100 %}{% else %}0{% endif %}%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="queue-item">
+        <div class="queue-ico" style="background:#eef9e0">🔊</div>
+        <div class="queue-meta">
+          <strong>Səsli dərslər</strong>
+          <span>{{ stats.lessons_with_audio }} / {{ stats.lessons }}</span>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:{% if stats.lessons %}{% widthratio stats.lessons_with_audio stats.lessons 100 %}{% else %}0{% endif %}%;background:var(--blue)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="queue-item">
+        <div class="queue-ico" style="background:#ffe8e8">💬</div>
+        <div class="queue-meta">
+          <strong>Oxunmamış dəstək</strong>
+          <span>{{ stats.support_unread }} mesaj</span>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 
-<div class="split" style="margin-top:24px">
+<div class="split">
   <section class="panel">
     <h2>Son kitablar</h2>
     {% if recent_books %}
-    <table>
-      <thead><tr><th>Başlıq</th><th>Müəllif</th></tr></thead>
-      <tbody>
-        {% for b in recent_books %}
-        <tr>
-          <td><a href="{% url 'panel-chapters' %}?book={{ b.id }}">{{ b.title|truncatechars:48 }}</a></td>
-          <td class="muted">{{ b.author|default:"—" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      {% for b in recent_books %}
+      <div class="queue-item">
+        <div class="queue-ico" style="background:#e8f1fe">📘</div>
+        <div class="queue-meta">
+          <strong><a href="{% url 'panel-chapters' %}?book={{ b.id }}" style="color:inherit;text-decoration:none">{{ b.title|truncatechars:48 }}</a></strong>
+          <span>{{ b.author|default:"—" }}</span>
+        </div>
+      </div>
+      {% endfor %}
     {% else %}
     <p class="empty">Kitab yoxdur.</p>
     {% endif %}
@@ -85,17 +134,15 @@
   <section class="panel">
     <h2>Son dərslər</h2>
     {% if recent_lessons %}
-    <table>
-      <thead><tr><th>Dərs</th><th>Kanal</th></tr></thead>
-      <tbody>
-        {% for l in recent_lessons %}
-        <tr>
-          <td>{{ l.title|truncatechars:48 }}</td>
-          <td class="muted">{{ l.series.channel.name }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      {% for l in recent_lessons %}
+      <div class="queue-item">
+        <div class="queue-ico" style="background:#f3eeff">🎬</div>
+        <div class="queue-meta">
+          <strong>{{ l.title|truncatechars:48 }}</strong>
+          <span>{{ l.series.channel.name }}</span>
+        </div>
+      </div>
+      {% endfor %}
     {% else %}
     <p class="empty">Dərs yoxdur.</p>
     {% endif %}

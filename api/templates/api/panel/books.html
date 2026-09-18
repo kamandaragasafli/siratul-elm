@@ -61,6 +61,60 @@
   </form>
 </section>
 
+<section class="form-panel" id="yeni-pdf">
+  <h2>PDF kitab əlavə et</h2>
+  <p class="muted" style="margin:0 0 14px;font-size:13px">
+    PDF-i buradan yükləyin — tətbiqdə avtomatik görünür (OCR yoxdur, bookmark fəsilləri oxucuda çıxır).
+  </p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create_pdf_book" />
+    <div class="form-grid">
+      <div class="field full">
+        <label for="pdf_title">Başlıq</label>
+        <input id="pdf_title" name="title" type="text" required placeholder="Kitab adı" />
+      </div>
+      <div class="field full">
+        <label for="pdf_file">PDF faylı</label>
+        <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf,.pdf" required />
+        <span class="muted" style="font-size:12px;display:block;margin-top:4px">Maks. ~100 MB</span>
+      </div>
+      <div class="field full">
+        <label for="pdf_cover">Qapaq şəkli (ixtiyari)</label>
+        <input id="pdf_cover" name="cover_image" type="file" accept="image/jpeg,image/png,image/webp,image/*" />
+      </div>
+      <div class="field">
+        <label for="pdf_author">Müəllif</label>
+        <input id="pdf_author" name="author" type="text" placeholder="Müəllif adı" />
+      </div>
+      <div class="field">
+        <label for="pdf_lang">Dil</label>
+        <select id="pdf_lang" name="language">
+          {% for code, label in language_choices %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field full">
+        <label for="pdf_desc">Qısa təsvir</label>
+        <input id="pdf_desc" name="description" type="text" placeholder="Kitab haqqında" />
+      </div>
+      <div class="field full">
+        <label for="pdf_topics">Mövzular (vergüllə)</label>
+        <input id="pdf_topics" name="topics" type="text" placeholder="hədis, əqidə" />
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="is_published" checked /> Yayınlı olsun
+        </label>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">PDF əlavə et</button>
+    </div>
+  </form>
+</section>
+
 <section class="form-panel">
   <h2>JSON kitabları sinxron et</h2>
   <p class="muted" style="margin:0 0 12px;font-size:13px">
@@ -89,6 +143,7 @@
       <tr>
         <th>Qapaq</th>
         <th>Başlıq</th>
+        <th>Növ</th>
         <th>Müəllif</th>
         <th>Fəsil</th>
         <th>Status</th>
@@ -100,22 +155,33 @@
       <tr>
         <td>
           {% if b.cover_image %}
-          <img src="{{ b.cover_image.url }}" alt="" style="width:42px;height:58px;object-fit:cover;border-radius:4px;border:1px solid rgba(196,161,90,0.35)" />
+          <img src="{{ b.cover_image.url }}" alt="" style="width:42px;height:58px;object-fit:cover;border-radius:4px;border:1px solid var(--line)" />
           {% else %}
           <span class="muted" style="font-size:12px">—</span>
           {% endif %}
         </td>
         <td>{{ b.title|truncatechars:60 }}</td>
+        <td>
+          {% if b.format == 'pdf' %}
+          <span class="badge" style="background:#e8f1fe;color:var(--blue)">PDF</span>
+          {% else %}
+          <span class="muted" style="font-size:12px">Mətn</span>
+          {% endif %}
+        </td>
         <td class="muted">{{ b.author|default:"—" }}</td>
-        <td class="muted">{{ b.chapter_count }}</td>
+        <td class="muted">{% if b.format == 'pdf' %}—{% else %}{{ b.chapter_count }}{% endif %}</td>
         <td>
           {% if b.is_published %}<span class="badge">Yayınlı</span>
           {% else %}<span class="badge off">Gizli</span>{% endif %}
         </td>
         <td>
+          {% if b.format != 'pdf' %}
           <a href="{% url 'panel-chapters' %}?book={{ b.id }}">Fəsillər</a>
           ·
-          <form method="post" enctype="multipart/form-data" class="inline-form" style="display:inline-flex;align-items:center;gap:6px;margin:4px 0">
+          {% elif b.pdf_file %}
+          <a href="{{ b.pdf_file.url }}" target="_blank" rel="noopener">PDF</a>
+          ·
+          {% endif %}          <form method="post" enctype="multipart/form-data" class="inline-form" style="display:inline-flex;align-items:center;gap:6px;margin:4px 0">
             {% csrf_token %}
             <input type="hidden" name="action" value="update_book_cover" />
             <input type="hidden" name="book_id" value="{{ b.id }}" />

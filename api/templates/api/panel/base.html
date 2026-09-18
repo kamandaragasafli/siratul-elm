@@ -4,199 +4,548 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Sirac{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #0b1520;
-      --ink-soft: #142433;
-      --mist: #1c3344;
-      --brass: #c4a15a;
-      --sage: #6b8f7a;
-      --text: #e9e4d8;
-      --muted: #9aa8b5;
-      --danger: #c45c4a;
-      --line: rgba(233, 228, 216, 0.12);
+      --bg: #eef1f6;
+      --sidebar: #ffffff;
+      --card: #ffffff;
+      --ink: #1a2233;
+      --muted: #8b95a8;
+      --line: #e8ecf2;
+      --blue: #4b8bf5;
+      --blue-soft: #e8f1fe;
+      --lime: #b4e645;
+      --lime-deep: #8fcc2a;
+      --orange: #ff9f6b;
+      --pink: #ff7eb3;
+      --purple: #8b7cf6;
+      --danger: #e85d5d;
+      --sage: #5cb88a;
+      --shadow: 0 8px 28px rgba(30, 45, 80, 0.06);
+      --radius: 22px;
+      --radius-sm: 14px;
     }
     * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: "Segoe UI", system-ui, sans-serif;
-      background: linear-gradient(165deg, var(--ink) 0%, var(--ink-soft) 55%, var(--mist) 100%);
-      color: var(--text);
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
       min-height: 100vh;
     }
-    a { color: var(--brass); text-decoration: none; }
+    a { color: var(--blue); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 48px; }
-    header {
-      display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
-      gap: 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line);
+    code {
+      font-size: 0.92em;
+      background: var(--blue-soft);
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: var(--ink);
     }
-    .brand { font-size: 26px; font-weight: 700; letter-spacing: 0.02em; }
-    .brand span { color: var(--brass); }
-    .meta { color: var(--muted); font-size: 14px; margin-top: 4px; }
-    .nav { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 248px 1fr;
+      min-height: 100vh;
+    }
+
+    /* —— Sidebar —— */
+    .sidebar {
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      padding: 22px 16px 18px;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 10px 22px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand:hover { text-decoration: none; }
+    .brand-mark {
+      width: 42px; height: 42px; border-radius: 14px;
+      background: linear-gradient(145deg, var(--blue), #6aa8ff);
+      color: #fff; font-weight: 800; font-size: 18px;
+      display: grid; place-items: center;
+      box-shadow: 0 8px 18px rgba(75, 139, 245, 0.35);
+    }
+    .brand-text { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 1px; }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
     .nav a {
-      display: inline-block; padding: 8px 12px; border-radius: 8px;
-      background: rgba(196, 161, 90, 0.1); border: 1px solid rgba(196, 161, 90, 0.25);
-      text-decoration: none; font-size: 13px; font-weight: 600; color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .15s, color .15s;
     }
-    .nav a:hover, .nav a.active {
-      background: rgba(196, 161, 90, 0.22); color: var(--brass); text-decoration: none;
+    .nav a svg { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.85; }
+    .nav a:hover {
+      background: #f4f7fb;
+      color: var(--ink);
+      text-decoration: none;
     }
+    .nav a.active {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(75, 139, 245, 0.35);
+    }
+    .nav a.active svg { opacity: 1; }
+
+    .sidebar-foot {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .help-card {
+      background: linear-gradient(160deg, #5b9bff 0%, #3d7cf0 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(75, 139, 245, 0.28);
+    }
+    .help-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
+    .help-card p { margin: 0 0 12px; font-size: 12px; opacity: 0.9; line-height: 1.4; }
+    .help-card a {
+      display: inline-block;
+      background: #fff;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 999px;
+      text-decoration: none;
+    }
+    .logout {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .logout:hover { background: #fff1f1; color: var(--danger); text-decoration: none; }
+
+    /* —— Main —— */
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 28px 8px;
+      flex-wrap: wrap;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      min-width: 120px;
+    }
+    .search {
+      flex: 1;
+      min-width: 180px;
+      max-width: 420px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 11px 16px;
+      box-shadow: var(--shadow);
+    }
+    .search svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
+    .search input {
+      border: none; outline: none; width: 100%;
+      font: inherit; font-size: 14px; color: var(--ink); background: transparent;
+    }
+    .search input::placeholder { color: var(--muted); }
+    .top-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 14px;
+      border: 1px solid var(--line); background: #fff;
+      display: grid; place-items: center; color: var(--muted);
+      box-shadow: var(--shadow); text-decoration: none;
+    }
+    .icon-btn:hover { color: var(--blue); text-decoration: none; }
+    .avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: linear-gradient(145deg, var(--lime), #7ec92a);
+      color: #163000; font-weight: 800; font-size: 14px;
+      display: grid; place-items: center;
+      box-shadow: var(--shadow);
+    }
+    .content {
+      padding: 12px 28px 40px;
+      flex: 1;
+    }
+    .meta-line {
+      color: var(--muted);
+      font-size: 13px;
+      margin: -2px 0 16px;
+      font-weight: 500;
+    }
+
+    /* —— Shared components (köhnə siniflər — bütün səhifələr) —— */
+    .wrap { max-width: none; margin: 0; padding: 0; }
     .grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 12px; margin-bottom: 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
     }
     .stat {
-      background: rgba(255,255,255,0.04); border: 1px solid var(--line);
-      border-radius: 12px; padding: 16px;
+      background: var(--card);
+      border: none;
+      border-radius: var(--radius);
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow);
     }
-    .stat .n { font-size: 28px; font-weight: 700; color: var(--brass); line-height: 1.1; }
-    .stat .l { margin-top: 6px; font-size: 13px; color: var(--muted); }
-    .stat .sub { margin-top: 4px; font-size: 12px; color: var(--sage); }
+    .stat .n {
+      font-size: 30px; font-weight: 800; color: var(--ink); line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+    .stat .l { margin-top: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .stat .sub { margin-top: 4px; font-size: 12px; color: var(--sage); font-weight: 500; }
+
     .cards {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
     }
     .card {
-      display: block; background: rgba(255,255,255,0.035); border: 1px solid var(--line);
-      border-radius: 14px; padding: 18px; text-decoration: none; color: inherit;
+      display: block;
+      background: var(--card);
+      border: none;
+      border-radius: var(--radius);
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--shadow);
+      transition: transform .15s, box-shadow .15s;
     }
-    .card:hover { border-color: rgba(196,161,90,0.45); text-decoration: none; }
-    .card h3 { margin: 0 0 8px; font-size: 16px; color: var(--brass); }
-    .card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(30, 45, 80, 0.1);
+      text-decoration: none;
+    }
+    .card h3 { margin: 0 0 8px; font-size: 16px; color: var(--ink); font-weight: 700; }
+    .card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; font-weight: 500; }
+    .card-ico {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: grid; place-items: center; margin-bottom: 12px; font-size: 18px;
+    }
+
     .panel, .form-panel {
-      background: rgba(255,255,255,0.035); border: 1px solid var(--line);
-      border-radius: 14px; padding: 18px 20px 20px; margin-bottom: 20px;
+      background: var(--card);
+      border: none;
+      border-radius: var(--radius);
+      padding: 20px 22px 22px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
     }
     .panel h2, .form-panel h2, .page-title {
-      margin: 0 0 14px; font-size: 13px; text-transform: uppercase;
-      letter-spacing: 0.06em; color: var(--sage); font-weight: 600;
+      margin: 0 0 14px;
+      font-size: 15px;
+      text-transform: none;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      font-weight: 700;
     }
-    .page-title { font-size: 15px; color: var(--text); text-transform: none; letter-spacing: 0; }
+    .page-title { font-size: 18px; margin-bottom: 18px; }
+    /* Topbar artıq başlıq göstərir — səhifə daxilindəki təkrar h1 gizlənsin */
+    .content > .page-title:first-child { display: none; }
+
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td {
-      text-align: left; padding: 10px 4px; border-bottom: 1px solid var(--line); vertical-align: top;
+      text-align: left; padding: 12px 8px;
+      border-bottom: 1px solid var(--line); vertical-align: middle;
     }
     th {
-      color: var(--muted); font-weight: 600; font-size: 12px;
-      text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--muted); font-weight: 700; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
+    tr:last-child td { border-bottom: none; }
     .muted { color: var(--muted); }
     .badge {
-      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
-      background: rgba(107,143,122,0.18); color: var(--sage);
+      display: inline-block; padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      background: #e8f8ef; color: var(--sage);
     }
-    .badge.off { background: rgba(196,92,74,0.18); color: var(--danger); }
-    .empty { color: var(--muted); font-size: 14px; padding: 12px 0 16px; }
+    .badge.off { background: #fdeaea; color: var(--danger); }
+    .empty { color: var(--muted); font-size: 14px; padding: 12px 0 8px; font-weight: 500; }
+
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
-    @media (max-width: 800px) { .form-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar {
+        position: relative; height: auto;
+        border-right: none; border-bottom: 1px solid var(--line);
+      }
+      .nav { flex-direction: row; flex-wrap: wrap; }
+      .nav a { padding: 10px 12px; font-size: 13px; }
+      .help-card { display: none; }
+      .form-grid { grid-template-columns: 1fr; }
+      .topbar { padding: 16px 16px 4px; }
+      .content { padding: 8px 16px 32px; }
+      .search { max-width: none; order: 3; flex-basis: 100%; }
+    }
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field.full { grid-column: 1 / -1; }
     .field label {
-      font-size: 12px; font-weight: 600; color: var(--muted);
+      font-size: 12px; font-weight: 700; color: var(--muted);
       text-transform: uppercase; letter-spacing: 0.04em;
     }
     .field input[type="text"],
     .field input[type="url"],
+    .field input[type="datetime-local"],
+    .field input[type="number"],
+    .field input[type="file"],
     .field select,
     .field textarea {
-      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
-      background: rgba(0,0,0,0.25); color: var(--text); font-size: 14px;
+      width: 100%; padding: 11px 13px; border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #f7f9fc; color: var(--ink); font-size: 14px; font-family: inherit;
     }
     .field textarea {
-      min-height: 320px; font-family: Consolas, "Courier New", monospace;
-      line-height: 1.45; resize: vertical;
+      min-height: 280px; font-family: Consolas, "Courier New", monospace;
+      line-height: 1.45; resize: vertical; background: #fff;
     }
     .field input:focus, .field select:focus, .field textarea:focus {
-      outline: none; border-color: rgba(196,161,90,0.55);
+      outline: none; border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(75, 139, 245, 0.15);
+      background: #fff;
     }
-    .field select option { background: #142433; }
     .check {
       display: flex; align-items: center; gap: 8px; margin-top: 4px;
-      font-size: 14px; color: var(--text);
+      font-size: 14px; color: var(--ink); font-weight: 500;
     }
     .actions {
       margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     }
     .btn {
-      appearance: none; border: none; cursor: pointer; padding: 11px 18px; border-radius: 8px;
-      background: var(--brass); color: var(--ink); font-weight: 700; font-size: 14px;
+      appearance: none; border: none; cursor: pointer;
+      padding: 12px 20px; border-radius: 999px;
+      background: var(--blue); color: #fff;
+      font-weight: 700; font-size: 14px; font-family: inherit;
+      box-shadow: 0 8px 18px rgba(75, 139, 245, 0.28);
     }
-    .btn:hover { filter: brightness(1.06); }
+    .btn:hover { filter: brightness(1.05); }
     .btn-danger {
-      background: rgba(196,92,74,0.85); color: #fff; padding: 6px 10px; font-size: 12px;
+      background: var(--danger); color: #fff; padding: 7px 12px;
+      font-size: 12px; border-radius: 999px; box-shadow: none;
     }
     .inline-form { display: inline; margin: 0; }
-    .alert { margin-bottom: 14px; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
-    .alert.err {
-      background: rgba(196,92,74,0.18); border: 1px solid rgba(196,92,74,0.35); color: #efb4aa;
+    .alert {
+      margin-bottom: 14px; padding: 12px 14px; border-radius: 14px;
+      font-size: 14px; font-weight: 500;
     }
-    .alert.ok {
-      background: rgba(107,143,122,0.18); border: 1px solid rgba(107,143,122,0.35); color: #b7d4c3;
-    }
-    .alert.warn {
-      background: rgba(196,161,90,0.15); border: 1px solid rgba(196,161,90,0.35); color: #e6d3a3;
-    }
-    footer { margin-top: 28px; color: var(--muted); font-size: 12px; }
+    .alert.err { background: #fdeaea; color: #b53a3a; }
+    .alert.ok { background: #e8f8ef; color: #2f8a5a; }
+    .alert.warn { background: #fff6e5; color: #9a6b12; }
+    footer { display: none; }
     .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
-    .fmt-bar {
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-      margin-bottom: 8px;
-    }
+    @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+
+    .fmt-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
     .fmt-btn {
       appearance: none; border: 1px solid var(--line); cursor: pointer;
-      min-width: 40px; height: 36px; padding: 0 12px; border-radius: 8px;
-      background: rgba(0,0,0,0.28); color: var(--text); font-size: 15px; font-weight: 700;
+      min-width: 40px; height: 36px; padding: 0 12px; border-radius: 10px;
+      background: #f7f9fc; color: var(--ink); font-size: 15px; font-weight: 700;
     }
-    .fmt-btn:hover { border-color: rgba(196,161,90,0.55); color: var(--brass); }
+    .fmt-btn:hover { border-color: var(--blue); color: var(--blue); }
     .fmt-btn.italic { font-style: italic; font-weight: 600; }
     .fmt-btn.ai-btn {
       min-width: 36px; padding: 0 10px; font-size: 16px;
-      border-color: rgba(107,143,122,0.45); color: var(--sage);
+      border-color: rgba(92, 184, 138, 0.45); color: var(--sage);
     }
     .fmt-btn.ai-btn:hover:not(:disabled) {
-      border-color: rgba(107,143,122,0.75); color: #b7d4c3;
-      box-shadow: 0 0 0 1px rgba(107,143,122,0.25);
+      border-color: var(--sage); box-shadow: 0 0 0 2px rgba(92, 184, 138, 0.15);
     }
     .fmt-btn.ai-btn:disabled { opacity: 0.55; cursor: wait; }
     .fmt-hint { font-size: 12px; color: var(--muted); }
+
+    /* Home dashboard extras */
+    .dash-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 1000px) { .dash-row { grid-template-columns: 1fr; } }
+    .progress-track {
+      height: 8px; border-radius: 999px; background: #eef1f6; overflow: hidden; margin-top: 10px;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 999px; background: var(--lime-deep);
+    }
+    .queue-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--line);
+    }
+    .queue-item:last-child { border-bottom: none; }
+    .queue-ico {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: grid; place-items: center; flex-shrink: 0; font-size: 16px;
+    }
+    .queue-meta { flex: 1; min-width: 0; }
+    .queue-meta strong {
+      display: block; font-size: 14px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .queue-meta span { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .cta-banner {
+      background: linear-gradient(135deg, #5b9bff 0%, #3d7cf0 55%, #6a5af9 100%);
+      color: #fff; border-radius: var(--radius); padding: 22px;
+      box-shadow: 0 12px 28px rgba(75, 139, 245, 0.28);
+      min-height: 160px; display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .cta-banner h3 { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
+    .cta-banner p { margin: 0 0 14px; font-size: 13px; opacity: 0.92; line-height: 1.4; }
+    .cta-banner a {
+      align-self: flex-start; background: #fff; color: var(--blue);
+      font-weight: 800; font-size: 13px; padding: 10px 16px; border-radius: 999px;
+      text-decoration: none;
+    }
   </style>
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <div class="brand">Sirac</div>
-        <div class="meta">{% block subtitle %}Panel{% endblock %} · {{ now|date:"d.m.Y H:i" }}</div>
-      </div>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="{% url 'panel-home' %}">
+        <div class="brand-mark">S</div>
+        <div>
+          <div class="brand-text">Sirac</div>
+          <div class="brand-sub">İdarə paneli</div>
+        </div>
+      </a>
+
       <nav class="nav">
-        <a href="{% url 'panel-home' %}" class="{% if nav == 'home' %}active{% endif %}">Ana</a>
-        <a href="{% url 'panel-books' %}" class="{% if nav == 'books' %}active{% endif %}">Kitablar</a>
-        <a href="{% url 'panel-chapters' %}" class="{% if nav == 'chapters' %}active{% endif %}">Fəsillər</a>
-        <a href="{% url 'panel-channels' %}" class="{% if nav == 'channels' %}active{% endif %}">Kanallar</a>
-        <a href="{% url 'panel-lessons' %}" class="{% if nav == 'lessons' %}active{% endif %}">Dərslər</a>
-        <a href="{% url 'panel-live-lessons' %}" class="{% if nav == 'live-lessons' %}active{% endif %}">Canlı</a>
-        <a href="{% url 'panel-meal-notes' %}" class="{% if nav == 'meal-notes' %}active{% endif %}">Məal qeyd</a>
-        <a href="{% url 'panel-support' %}" class="{% if nav == 'support' %}active{% endif %}">Dəstək</a>
-        <a href="{% url 'panel-logout' %}">Çıxış</a>
+        <a href="{% url 'panel-home' %}" class="{% if nav == 'home' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>
+          Ana
+        </a>
+        <a href="{% url 'panel-books' %}" class="{% if nav == 'books' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3V4z"/><path d="M5 4v16"/></svg>
+          Kitablar
+        </a>
+        <a href="{% url 'panel-chapters' %}" class="{% if nav == 'chapters' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          Fəsillər
+        </a>
+        <a href="{% url 'panel-channels' %}" class="{% if nav == 'channels' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="m10 9 5 3-5 3V9z"/></svg>
+          Kanallar
+        </a>
+        <a href="{% url 'panel-lessons' %}" class="{% if nav == 'lessons' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V6l10 6-10 6z"/></svg>
+          Dərslər
+        </a>
+        <a href="{% url 'panel-live-lessons' %}" class="{% if nav == 'live-lessons' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M5 12a7 7 0 0 1 7-7M19 12a7 7 0 0 0-7-7M5 12a7 7 0 0 0 7 7M19 12a7 7 0 0 1-7 7"/></svg>
+          Canlı
+        </a>
+        <a href="{% url 'panel-support' %}" class="{% if nav == 'support' %}active{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8.5 8.5 0 0 1-8.5 8.5H7l-4 2 1.5-4.2A8.5 8.5 0 1 1 21 12z"/></svg>
+          Dəstək
+          {% if support_unread %}
+          <span style="margin-left:auto;background:{% if nav == 'support' %}rgba(255,255,255,.25){% else %}#ffe8e8{% endif %};color:{% if nav == 'support' %}#fff{% else %}var(--danger){% endif %};font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px">{{ support_unread }}</span>
+          {% endif %}
+        </a>
       </nav>
-    </header>
 
-    {% if messages %}
-      {% for message in messages %}
-      <div class="alert {% if 'error' in message.tags %}err{% elif 'warning' in message.tags %}warn{% else %}ok{% endif %}">
-        {{ message }}
+      <div class="sidebar-foot">
+        <div class="help-card">
+          <strong>API yoxlama</strong>
+          <p>Mobil /api endpoint-ləri işləyir?</p>
+          <a href="/api/health/" target="_blank" rel="noopener">Health yoxla</a>
+        </div>
+        <a class="logout" href="{% url 'panel-logout' %}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+          Çıxış
+        </a>
       </div>
-      {% endfor %}
-    {% endif %}
-    {% if form_error %}
-    <div class="alert err">{{ form_error }}</div>
-    {% endif %}
+    </aside>
 
-    {% block content %}{% endblock %}
+    <div class="main">
+      <header class="topbar">
+        <h1>{% block page_heading %}{% block subtitle %}Panel{% endblock %}{% endblock %}</h1>
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="search" id="panel-search" placeholder="Səhifədə axtar…" autocomplete="off" />
+        </label>
+        <div class="top-actions">
+          <a class="icon-btn" href="{% url 'panel-support' %}" title="Dəstək">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          </a>
+          <div class="avatar" title="Staff">{% if user.get_username %}{{ user.get_username|slice:":1"|upper }}{% else %}S{% endif %}</div>
+        </div>
+      </header>
 
-    <footer>Staff panel · Django admin istifadə olunmur</footer>
+      <div class="content">
+        <div class="meta-line">{{ now|date:"d.m.Y H:i" }}</div>
+
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert {% if 'error' in message.tags %}err{% elif 'warning' in message.tags %}warn{% else %}ok{% endif %}">
+            {{ message }}
+          </div>
+          {% endfor %}
+        {% endif %}
+        {% if form_error %}
+        <div class="alert err">{{ form_error }}</div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </div>
   </div>
+  <script>
+    (function () {
+      var input = document.getElementById('panel-search');
+      if (!input) return;
+      input.addEventListener('input', function () {
+        var q = (input.value || '').trim().toLowerCase();
+        document.querySelectorAll('.content table tbody tr').forEach(function (tr) {
+          tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+        });
+      });
+    })();
+  </script>
+  {% block extra_js %}{% endblock %}
 </body>
 </html>
