@@ -5,13 +5,68 @@ from __future__ import annotations
 import logging
 import os
 import re
+import shutil
 import tempfile
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Datacenter IP-lərdə web client tez-tez bot sayılır; android/ios daha stabil olur
-_DEFAULT_PLAYER_CLIENTS = ['android', 'ios', 'mweb', 'tv', 'web']
+# Cookie ilə ən stabillər əvvəl; android cookies ilə tez-tez «page needs reload» verir
+_DEFAULT_PLAYER_CLIENTS = ['web', 'mweb', 'tv', 'web_safari', 'ios']
+
+_YT_HOSTS = (
+    'youtube.com',
+    'google.com',
+    'googlevideo.com',
+    'youtu.be',
+    'ggpht.com',
+    'ytimg.com',
+)
+
+
+def _media_root() -> Path:
+    try:
+        from django.conf import settings as dj_settings
+
+        return Path(dj_settings.MEDIA_ROOT)
+    except Exception:
+        return Path(tempfile.gettempdir()) / 'sirac_ytdlp'
+
+
+def _is_youtube_cookie_line(line: str) -> bool:
+    if not line.strip() or line.startswith('#'):
+        return True  # header saxla
+    domain = line.split('\t', 1)[0].lower().lstrip('.')
+    return any(h in domain for h in _YT_HOSTS)
+
+
+def _writable_cookie_copy(src: Path) -> str:
+    """
+    Render Secret Files read-only-dur; yt-dlp çıxışda cookie yazmağa çalışır → OSError 30.
+    Writable nüsxə + yalnız YouTube/Google sətirləri.
+    """
+    dest_dir = _media_root() / 'audio'
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / 'ytdlp_cookies.txt'
+
+    try:
+        raw = src.read_text(encoding='utf-8', errors='ignore')
+    except OSError as exc:
+        logger.warning('cookies oxunmadı %s: %s', src, exc)
+        return str(src)
+
+    filtered = [line for line in raw.splitlines() if _is_youtube_cookie_line(line)]
+    useful = sum(1 for L in filtered if L.strip() and not L.startswith('#'))
+
+    if useful < 3:
+        shutil.copyfile(src, dest)
+        logger.info('cookies writable copy (full) → %s', dest)
+    else:
+        text = '\n'.join(filtered) + '\n'
+        if not dest.exists() or dest.read_text(encoding='utf-8', errors='ignore') != text:
+            dest.write_text(text, encoding='utf-8')
+        logger.info('cookies writable copy (%s youtube/google sətir) → %s', useful, dest)
+    return str(dest)
 
 
 def _cookies_file() -> str | None:
@@ -21,17 +76,25 @@ def _cookies_file() -> str | None:
       və ya YTDLP_COOKIES=<Netscape cookies.txt məzmunu>
     """
     path = os.environ.get('YTDLP_COOKIES_FILE', '').strip()
+    media_root = _media_root()
     try:
         from django.conf import settings as dj_settings
 
         if not path:
             path = (getattr(dj_settings, 'YTDLP_COOKIES_FILE', None) or '').strip()
-        media_root = Path(dj_settings.MEDIA_ROOT)
     except Exception:
-        media_root = Path(tempfile.gettempdir()) / 'sirac_ytdlp'
+        pass
 
     if path and Path(path).is_file():
-        return path
+        src = Path(path)
+        # /etc/secrets və digər read-only yollar → writable nüsxə
+        try:
+            with open(src, 'a', encoding='utf-8'):
+                pass
+            # Yazıla bilir — yenə də filter üçün nüsxə götür
+            return _writable_cookie_copy(src)
+        except OSError:
+            return _writable_cookie_copy(src)
 
     raw = (os.environ.get('YTDLP_COOKIES') or '').strip()
     if not raw:
@@ -99,6 +162,13 @@ def friendly_ytdlp_error(exc: BaseException | str) -> str:
             'YouTube bot yoxlaması səsi blokladı. '
             'Admin paneldən dərsə «Səs hazırla» basın və ya Render-ə YouTube cookies əlavə edin.'
         )
+    if 'page needs to be reloaded' in low:
+        return (
+            'YouTube müvəqqəti cavab vermədi (page reload). '
+            'Bir az sonra «Səs hazırla» ilə yenidən cəhd edin.'
+        )
+    if 'requested format is not available' in low:
+        return 'YouTube bu video üçün səs formatı vermədi. Yenidən cəhd edin.'
     if 'private video' in low or 'login required' in low:
         return 'Video gizli və ya giriş tələb edir.'
     if 'video unavailable' in low:

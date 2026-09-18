@@ -140,17 +140,17 @@ def resolve_stream_url(
     except ImportError:
         return None, None, None, 'yt-dlp yoxdur'
 
-    # Əvvəl sürətli klientlər; uğursuz olsa baza fallback (mweb/tv/web + cookies)
+    # Cookie ilə web/mweb; android cookies-lə «page needs reload» verir
     attempts: list[list[str]] = [
-        ['android', 'ios'],
-        ['android_creator', 'ios', 'mweb', 'tv'],
-        ['android', 'ios', 'mweb', 'tv', 'web'],
+        ['web', 'mweb'],
+        ['tv', 'web_safari', 'ios'],
+        ['web', 'mweb', 'tv', 'ios'],
     ]
     last_err: str | None = None
     info = None
     for clients in attempts:
         opts = ytdlp_base_opts(
-            format='bestaudio[ext=m4a]/bestaudio/best',
+            format='bestaudio[ext=m4a]/bestaudio/best/ba/b',
             skip_download=True,
             socket_timeout=25,
             retries=2,
@@ -234,27 +234,47 @@ def ensure_audio_file(lesson) -> tuple[bool, str | None]:
     stem = lesson.youtube_id or f'lesson-{lesson.pk}'
     outtmpl = str(out_dir / f'{stem}.%(ext)s')
 
-    opts: dict = ytdlp_base_opts(
-        format='bestaudio/best',
-        outtmpl=outtmpl,
-        socket_timeout=120,
-        retries=5,
-    )
-    if shutil.which('ffmpeg'):
-        opts['postprocessors'] = [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '128',
-        }]
-    else:
-        opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best'
-        opts['prefer_ffmpeg'] = False
-    try:
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(source, download=True)
-    except Exception as exc:
-        logger.exception('ensure_audio_file failed lesson=%s', lesson.pk)
-        return False, friendly_ytdlp_error(exc)
+    client_attempts: list[list[str]] = [
+        ['web', 'mweb'],
+        ['tv', 'web_safari', 'ios'],
+        ['web', 'mweb', 'tv', 'ios'],
+    ]
+    info = None
+    last_err: str | None = None
+    for clients in client_attempts:
+        opts: dict = ytdlp_base_opts(
+            format='bestaudio/best/ba/b',
+            outtmpl=outtmpl,
+            socket_timeout=120,
+            retries=5,
+        )
+        opts['extractor_args'] = {'youtube': {'player_client': clients}}
+        if shutil.which('ffmpeg'):
+            opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '128',
+            }]
+        else:
+            opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best/ba/b'
+            opts['prefer_ffmpeg'] = False
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(source, download=True)
+            if info:
+                break
+        except Exception as exc:
+            last_err = friendly_ytdlp_error(exc)
+            info = None
+            logger.warning(
+                'ensure_audio_file attempt failed lesson=%s clients=%s: %s',
+                lesson.pk,
+                clients,
+                last_err,
+            )
+    if not info:
+        logger.error('ensure_audio_file failed lesson=%s: %s', lesson.pk, last_err)
+        return False, last_err or 'Ses endirilmedi'
 
     # Tapilan fayl (mp3 postprocessor və ya birbaşa m4a/webm)
     ext = (info or {}).get('ext') or 'mp3'
