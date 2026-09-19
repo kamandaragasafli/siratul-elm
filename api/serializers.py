@@ -30,7 +30,7 @@ class ChapterSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'content', 'blocks', 'page']
 
     def get_page(self, obj):
-        # PDF bookmark səhifəsi blocks-da saxlana bilər: {"page": N}
+        # PDF mündəricat səhifəsi blocks-da: {"type":"pdfPage","page":N}
         if isinstance(obj.blocks, dict) and obj.blocks.get('page'):
             try:
                 return int(obj.blocks['page'])
@@ -52,6 +52,7 @@ class BookSerializer(serializers.ModelSerializer):
     coverUrl = serializers.SerializerMethodField()
     pdfUrl = serializers.SerializerMethodField()
     pdfPageCount = serializers.IntegerField(source='pdf_page_count', allow_null=True)
+    pageDirection = serializers.CharField(source='page_direction')
     createdAt = serializers.DateTimeField(source='created_at', format='iso-8601')
     chapters = ChapterSerializer(many=True, read_only=True)
 
@@ -68,6 +69,7 @@ class BookSerializer(serializers.ModelSerializer):
             'format',
             'pdfUrl',
             'pdfPageCount',
+            'pageDirection',
             'chapters',
             'createdAt',
             'source',
@@ -87,6 +89,7 @@ class BookListSerializer(serializers.ModelSerializer):
     coverUrl = serializers.SerializerMethodField()
     pdfUrl = serializers.SerializerMethodField()
     pdfPageCount = serializers.IntegerField(source='pdf_page_count', allow_null=True)
+    pageDirection = serializers.CharField(source='page_direction')
     createdAt = serializers.DateTimeField(source='created_at', format='iso-8601')
     chapterCount = serializers.SerializerMethodField()
 
@@ -103,6 +106,7 @@ class BookListSerializer(serializers.ModelSerializer):
             'format',
             'pdfUrl',
             'pdfPageCount',
+            'pageDirection',
             'createdAt',
             'source',
             'topics',

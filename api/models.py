@@ -28,6 +28,10 @@ class Book(models.Model):
         ('text', 'Mətn'),
         ('pdf', 'PDF'),
     ]
+    PAGE_DIRECTION_CHOICES = [
+        ('ltr', 'Soldan sağa (LTR)'),
+        ('rtl', 'Sağdan sola (RTL)'),
+    ]
 
     public_id = models.CharField(max_length=120, unique=True, db_index=True)
     title = models.CharField(max_length=500)
@@ -48,6 +52,15 @@ class Book(models.Model):
         help_text='PDF oxucu üçün fayl (format=pdf olanda).',
     )
     pdf_page_count = models.PositiveIntegerField(blank=True, null=True)
+    page_direction = models.CharField(
+        max_length=3,
+        choices=PAGE_DIRECTION_CHOICES,
+        default='ltr',
+        help_text=(
+            'PDF kitab çevirmə istiqaməti. Ərəb kitablarında «Sağdan sola» seçin — '
+            'səhifə çevirmə tərs olur.'
+        ),
+    )
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='api')
     topics = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -44,6 +44,7 @@ class BookAdminForm(forms.ModelForm):
             'language': 'Dil',
             'cover_image': 'Qapaq şəkli',
             'cover_tone': 'Rəng kodu (qapaq yoxdursa)',
+            'page_direction': 'PDF səhifə istiqaməti',
             'source': 'Mənbə',
             'is_published': 'Tətbiqdə göstər (yayınlı)',
         }
@@ -55,6 +56,7 @@ class BookAdminForm(forms.ModelForm):
             'language': 'Kitabın əsas dili. Çox vaxt «Azərbaycan» qalır.',
             'cover_image': 'JPG, PNG və ya WebP. Tövsiyə: şaquli format, ən azı 400×600 px.',
             'cover_tone': '0–5 arası rəqəm. Qapaq şəkli olmayanda placeholder rəngi seçir.',
+            'page_direction': 'Ərəb PDF kitablarında «Sağdan sola» seçin — səhifə çevirmə tərs olur.',
             'is_published': 'Söndürsəniz kitab tətbiqdə gizlənir.',
         }
         widgets = {
@@ -227,11 +229,12 @@ class BookAdmin(admin.ModelAdmin):
         'title',
         'author',
         'language',
+        'page_direction',
         'chapter_count',
         'is_published',
         'updated_at',
     )
-    list_filter = ('language', 'is_published')
+    list_filter = ('language', 'page_direction', 'is_published')
     search_fields = ('title', 'author', 'public_id', 'description')
     list_editable = ('is_published',)
     readonly_fields = ('created_at', 'updated_at', 'cover_preview')
@@ -245,7 +248,7 @@ class BookAdmin(admin.ModelAdmin):
                     'Ən azı <strong>kitab adını</strong> yazın. '
                     'Müəllif və təsvir istəyə bağlıdır — tətbiqdə kitabxana kartında görünür.'
                 ),
-                'fields': ('title', 'author', 'description', 'language', 'topics_text'),
+                'fields': ('title', 'author', 'description', 'language', 'page_direction', 'topics_text'),
             },
         ),
         (
@@ -279,7 +282,7 @@ class BookAdmin(admin.ModelAdmin):
         (
             'Kitab haqqında',
             {
-                'fields': ('title', 'author', 'description', 'language', 'topics_text'),
+                'fields': ('title', 'author', 'description', 'language', 'page_direction', 'topics_text'),
             },
         ),
         (

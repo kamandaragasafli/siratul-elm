@@ -3,12 +3,14 @@ import re
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth import logout
+from django.contrib.auth import authenticate, login, logout
 from django.db.models import Count, Max
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
 
 from .book_import import import_all_bundled_books
 from .chapter_ai import ChapterAIError, fix_chapter_text
@@ -26,6 +28,51 @@ from .chapter_blocks import (
 )
 from .models import Book, Chapter, SupportMessage, TelegramLiveLesson, VideoChannel, VideoLesson, VideoSeries
 from .youtube import fetch_youtube_title, sync_channel_playlists
+
+
+def _safe_next_url(request, fallback='/'):
+    nxt = (request.POST.get('next') or request.GET.get('next') or '').strip()
+    if nxt and url_has_allowed_host_and_scheme(
+        nxt,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return nxt
+    return fallback
+
+
+@never_cache
+@require_http_methods(['GET', 'POST'])
+def panel_login(request):
+    """Staff panel giriş — Django admin login əvəzinə."""
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect(_safe_next_url(request))
+
+    error = None
+    username = ''
+    if request.method == 'POST':
+        username = (request.POST.get('username') or '').strip()
+        password = request.POST.get('password') or ''
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            error = 'İstifadəçi adı və ya şifrə yanlışdır.'
+        elif not user.is_active:
+            error = 'Hesab deaktivdir.'
+        elif not user.is_staff:
+            error = 'Bu hesaba panel girişi yoxdur.'
+        else:
+            login(request, user)
+            return redirect(_safe_next_url(request))
+
+    return render(
+        request,
+        'api/panel/login.html',
+        {
+            'error': error,
+            'username': username,
+            'next': request.GET.get('next') or request.POST.get('next') or '/',
+        },
+    )
 
 
 def _parse_panel_datetime(raw: str):
@@ -311,6 +358,71 @@ def _handle_create_book(request):
     return None
 
 
+def _parse_toc_lines(raw: str) -> list[tuple[str, int]]:
+    """Mündəricat: hər sətirdə «Başlıq|səhifə» və ya «Başlıq, səhifə»."""
+    out: list[tuple[str, int]] = []
+    for line in (raw or '').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        title = ''
+        page_s = ''
+        if '|' in line:
+            title, _, page_s = line.partition('|')
+        elif '\t' in line:
+            title, _, page_s = line.partition('\t')
+        else:
+            m = re.match(r'^(.+?)[,;\s]+(\d+)\s*$', line)
+            if m:
+                title, page_s = m.group(1), m.group(2)
+            else:
+                continue
+        title = title.strip()
+        try:
+            page = int(page_s.strip())
+        except ValueError:
+            continue
+        if not title or page < 1:
+            continue
+        out.append((title[:500], page))
+    return out[:300]
+
+
+def _replace_pdf_toc(book: Book, entries: list[tuple[str, int]]) -> int:
+    book.chapters.all().delete()
+    for i, (title, page) in enumerate(entries):
+        Chapter.objects.create(
+            book=book,
+            public_id=f'ch-{i + 1}',
+            title=title,
+            content='',
+            blocks=[{'type': 'pdfPage', 'page': page}],
+            order=i,
+        )
+    book.save(update_fields=['updated_at'])
+    return len(entries)
+
+
+def _chapter_pdf_page(chapter: Chapter) -> int | None:
+    blocks = chapter.blocks
+    if isinstance(blocks, list) and blocks:
+        first = blocks[0]
+        if isinstance(first, dict) and first.get('type') == 'pdfPage':
+            try:
+                return int(first.get('page') or 0) or None
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
+def _parse_page_direction(raw: str | None, language: str = 'az') -> str:
+    value = (raw or '').strip().lower()[:3]
+    if value in ('ltr', 'rtl'):
+        return value
+    # Dil ərəbdirsə və seçim göndərilməyibsə — RTL
+    return 'rtl' if language == 'ar' else 'ltr'
+
+
 def _handle_create_pdf_book(request):
     title = (request.POST.get('title') or '').strip()
     author = (request.POST.get('author') or '').strip() or 'PDF'
@@ -331,6 +443,7 @@ def _handle_create_pdf_book(request):
         return 'Yalnız PDF faylı yüklənə bilər.'
     if language not in ('az', 'ar', 'en'):
         language = 'az'
+    page_direction = _parse_page_direction(request.POST.get('page_direction'), language)
     if cover and not (cover.content_type or '').startswith('image/'):
         return 'Qapaq yalnız şəkil faylı ola bilər (JPG, PNG, WebP).'
 
@@ -353,6 +466,7 @@ def _handle_create_pdf_book(request):
         topics=topics,
         is_published=published,
         format='pdf',
+        page_direction=page_direction,
     )
     book.pdf_file = pdf
     update_fields = ['pdf_file']
@@ -361,7 +475,29 @@ def _handle_create_pdf_book(request):
         update_fields.append('cover_image')
     book.save(update_fields=update_fields)
 
-    messages.success(request, f'PDF kitab əlavə olundu: {book.title}')
+    toc = _parse_toc_lines(request.POST.get('toc_text') or '')
+    if toc:
+        n = _replace_pdf_toc(book, toc)
+        messages.success(request, f'PDF kitab əlavə olundu: {book.title} · {n} mündəricat sətri')
+    else:
+        messages.success(
+            request,
+            f'PDF kitab əlavə olundu: {book.title}. Mündəricatı Fəsillər səhifəsindən yazın.',
+        )
+    request._redirect_book_id = book.id
+    return None
+
+
+def _handle_save_pdf_toc(request):
+    book_id = (request.POST.get('book_id') or '').strip()
+    book = Book.objects.filter(pk=book_id).first() if book_id.isdigit() else None
+    if not book or book.format != 'pdf':
+        return 'PDF kitab seçin.'
+    toc = _parse_toc_lines(request.POST.get('toc_text') or '')
+    if not toc:
+        return 'Mündəricat boşdur. Format: Başlıq|səhifə (hər sətirdə bir).'
+    n = _replace_pdf_toc(book, toc)
+    messages.success(request, f'Mündəricat saxlanıldı: {n} başlıq')
     request._redirect_book_id = book.id
     return None
 
@@ -370,6 +506,7 @@ def _handle_create_chapter(request):
     book_id = (request.POST.get('book_id') or '').strip()
     title = (request.POST.get('title') or '').strip()
     content = request.POST.get('content') or ''
+    page_raw = (request.POST.get('page') or '').strip()
 
     book = Book.objects.filter(pk=book_id).first() if book_id.isdigit() else None
     if not book:
@@ -385,11 +522,24 @@ def _handle_create_chapter(request):
         n += 1
         public_id = f'ch-{next_order + 1}-{n}'
 
+    blocks = []
+    content_val = content
+    if book.format == 'pdf':
+        try:
+            page = int(page_raw)
+        except ValueError:
+            return 'Səhifə nömrəsi lazımdır.'
+        if page < 1:
+            return 'Səhifə nömrəsi 1-dən kiçik ola bilməz.'
+        blocks = [{'type': 'pdfPage', 'page': page}]
+        content_val = ''
+
     chapter = Chapter.objects.create(
         book=book,
         public_id=public_id,
         title=title,
-        content=content,
+        content=content_val,
+        blocks=blocks,
         order=next_order,
     )
     book.save(update_fields=['updated_at'])
@@ -425,6 +575,21 @@ def _handle_update_book_cover(request):
     book.cover_image = cover
     book.save(update_fields=['cover_image', 'updated_at'])
     messages.success(request, f'«{book.title}» qapağı yeniləndi.')
+    return None
+
+
+def _handle_update_page_direction(request):
+    book_id = (request.POST.get('book_id') or '').strip()
+    book = Book.objects.filter(pk=book_id).first() if book_id.isdigit() else None
+    if not book:
+        return 'Kitab tapılmadı.'
+    if book.format != 'pdf':
+        return 'İstiqamət yalnız PDF kitablar üçündür.'
+    direction = _parse_page_direction(request.POST.get('page_direction'), book.language)
+    book.page_direction = direction
+    book.save(update_fields=['page_direction', 'updated_at'])
+    label = 'sağdan sola' if direction == 'rtl' else 'soldan sağa'
+    messages.success(request, f'«{book.title}» — səhifə istiqaməti: {label}.')
     return None
 
 
@@ -528,9 +693,16 @@ def panel_books(request):
         elif action == 'create_pdf_book':
             form_error = _handle_create_pdf_book(request)
             if not form_error:
+                bid = getattr(request, '_redirect_book_id', None)
+                if bid:
+                    return redirect(f'/panel/chapters/?book={bid}')
                 return redirect('panel-books')
         elif action == 'update_book_cover':
             form_error = _handle_update_book_cover(request)
+            if not form_error:
+                return redirect('panel-books')
+        elif action == 'update_page_direction':
+            form_error = _handle_update_page_direction(request)
             if not form_error:
                 return redirect('panel-books')
         elif action == 'delete_book':
@@ -543,6 +715,7 @@ def panel_books(request):
         '-created_at'
     )
     ctx['language_choices'] = Book.LANGUAGE_CHOICES
+    ctx['page_direction_choices'] = Book.PAGE_DIRECTION_CHOICES
     return render(request, 'api/panel/books.html', ctx)
 
 
@@ -566,8 +739,19 @@ def panel_chapters(request):
             form_error = _handle_create_chapter(request)
             if not form_error:
                 bid, cid = getattr(request, '_redirect_chapter', (None, None))
-                if bid and cid:
-                    return redirect(f'/panel/chapters/?book={bid}&chapter={cid}')
+                if bid:
+                    book = Book.objects.filter(pk=bid).first()
+                    if book and book.format == 'pdf':
+                        return redirect(f'/panel/chapters/?book={bid}')
+                    if cid:
+                        return redirect(f'/panel/chapters/?book={bid}&chapter={cid}')
+                return redirect('panel-chapters')
+        elif action == 'save_pdf_toc':
+            form_error = _handle_save_pdf_toc(request)
+            if not form_error:
+                bid = getattr(request, '_redirect_book_id', None)
+                if bid:
+                    return redirect(f'/panel/chapters/?book={bid}')
                 return redirect('panel-chapters')
 
     selected_book = None
@@ -579,6 +763,8 @@ def panel_chapters(request):
             book_chapters = list(
                 Chapter.objects.filter(book=selected_book).order_by('order', 'id')
             )
+            for ch in book_chapters:
+                ch.pdf_page = _chapter_pdf_page(ch)
     if selected_chapter_id.isdigit():
         edit_chapter = (
             Chapter.objects.select_related('book').filter(pk=selected_chapter_id).first()
@@ -996,8 +1182,8 @@ def panel_support(request):
     return render(request, 'api/panel/support.html', ctx)
 
 
-@staff_member_required
+@never_cache
 @require_http_methods(['GET', 'POST'])
 def panel_logout(request):
     logout(request)
-    return redirect('/admin/login/?next=/')
+    return redirect('panel-login')

@@ -105,6 +105,10 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 120 * 1024 * 1024  # 120 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
+
 # Mobil (Expo / React Native) üçün CORS — inkişaf mərhələsi
 CORS_ALLOW_ALL_ORIGINS = True
 

@@ -13,11 +13,13 @@ from api.dashboard import (
     panel_home,
     panel_lessons,
     panel_live_lessons,
+    panel_login,
     panel_logout,
     panel_support,
 )
 
 urlpatterns = [
+    path('login/', panel_login, name='panel-login'),
     path('', panel_home, name='panel-home'),
     path('dashboard/', dashboard, name='dashboard'),
     path('panel/books/', panel_books, name='panel-books'),

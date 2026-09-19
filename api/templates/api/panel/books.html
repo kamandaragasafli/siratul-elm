@@ -64,7 +64,8 @@
 <section class="form-panel" id="yeni-pdf">
   <h2>PDF kitab əlavə et</h2>
   <p class="muted" style="margin:0 0 14px;font-size:13px">
-    PDF-i buradan yükləyin — tətbiqdə avtomatik görünür (OCR yoxdur, bookmark fəsilləri oxucuda çıxır).
+    PDF-i buradan yükləyin — tətbiqdə avtomatik görünür. Mündəricatı özünüz yazın
+    (<code>Başlıq|səhifə</code>); fəsillər avtomatik yaranmır.
   </p>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -95,6 +96,17 @@
           {% endfor %}
         </select>
       </div>
+      <div class="field">
+        <label for="pdf_dir">Səhifə istiqaməti</label>
+        <select id="pdf_dir" name="page_direction">
+          {% for code, label in page_direction_choices %}
+          <option value="{{ code }}"{% if code == 'ltr' %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <span class="muted" style="font-size:12px;display:block;margin-top:4px">
+          Ərəb kitabları üçün «Sağdan sola» — PDF kitab kimi tərs çevrilir.
+        </span>
+      </div>
       <div class="field full">
         <label for="pdf_desc">Qısa təsvir</label>
         <input id="pdf_desc" name="description" type="text" placeholder="Kitab haqqında" />
@@ -102,6 +114,15 @@
       <div class="field full">
         <label for="pdf_topics">Mövzular (vergüllə)</label>
         <input id="pdf_topics" name="topics" type="text" placeholder="hədis, əqidə" />
+      </div>
+      <div class="field full">
+        <label for="pdf_toc">Mündəricat (başlıq + səhifə)</label>
+        <textarea id="pdf_toc" name="toc_text" rows="8" placeholder="Müqəddimə|3
+Birinci fəsil|12
+Ömər ibn əl-Xattab — Əməllər niyyətlərə görədir|15"></textarea>
+        <span class="muted" style="font-size:12px;display:block;margin-top:4px">
+          Hər sətirdə: <code>Başlıq|səhifə</code>. Boş buraxsanız sonra Fəsillər səhifəsindən yaza bilərsiniz. Avtomatik yaranmaz.
+        </span>
       </div>
       <div class="field">
         <label class="check">
@@ -144,6 +165,7 @@
         <th>Qapaq</th>
         <th>Başlıq</th>
         <th>Növ</th>
+        <th>İstiqamət</th>
         <th>Müəllif</th>
         <th>Fəsil</th>
         <th>Status</th>
@@ -168,6 +190,25 @@
           <span class="muted" style="font-size:12px">Mətn</span>
           {% endif %}
         </td>
+        <td>
+          {% if b.format == 'pdf' %}
+          <form method="post" class="inline-form" style="display:inline-flex;align-items:center;gap:4px">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_page_direction" />
+            <input type="hidden" name="book_id" value="{{ b.id }}" />
+            <select name="page_direction" style="font-size:12px;max-width:130px"
+                    onchange="this.form.submit()">
+              {% for code, label in page_direction_choices %}
+              <option value="{{ code }}"{% if b.page_direction == code %} selected{% endif %}>
+                {% if code == 'rtl' %}RTL ←{% else %}LTR →{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </form>
+          {% else %}
+          <span class="muted" style="font-size:12px">—</span>
+          {% endif %}
+        </td>
         <td class="muted">{{ b.author|default:"—" }}</td>
         <td class="muted">{% if b.format == 'pdf' %}—{% else %}{{ b.chapter_count }}{% endif %}</td>
         <td>
@@ -178,9 +219,13 @@
           {% if b.format != 'pdf' %}
           <a href="{% url 'panel-chapters' %}?book={{ b.id }}">Fəsillər</a>
           ·
-          {% elif b.pdf_file %}
+          {% else %}
+          <a href="{% url 'panel-chapters' %}?book={{ b.id }}">Mündəricat</a>
+          ·
+          {% if b.pdf_file %}
           <a href="{{ b.pdf_file.url }}" target="_blank" rel="noopener">PDF</a>
           ·
+          {% endif %}
           {% endif %}          <form method="post" enctype="multipart/form-data" class="inline-form" style="display:inline-flex;align-items:center;gap:6px;margin:4px 0">
             {% csrf_token %}
             <input type="hidden" name="action" value="update_book_cover" />
@@ -214,4 +259,15 @@
   <p class="empty">Kitab yoxdur — yuxarıdan əlavə edin.</p>
   {% endif %}
 </section>
+<script>
+(function () {
+  var lang = document.getElementById('pdf_lang');
+  var dir = document.getElementById('pdf_dir');
+  if (!lang || !dir) return;
+  lang.addEventListener('change', function () {
+    if (lang.value === 'ar') dir.value = 'rtl';
+    else if (dir.value === 'rtl' && lang.value !== 'ar') dir.value = 'ltr';
+  });
+})();
+</script>
 {% endblock %}
