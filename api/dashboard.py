@@ -911,7 +911,7 @@ def _handle_prepare_lesson_audio(request):
             'Və ya aşağıdan MP3 yükləyin.'
         )
 
-    ok, err = ensure_audio_file(lesson, force=True)
+    ok, err, _blocking = ensure_audio_file(lesson, force=True)
     if ok:
         messages.success(request, f'«{lesson.title}» — səs hazırdır.')
         request._redirect_series_id = lesson.series_id

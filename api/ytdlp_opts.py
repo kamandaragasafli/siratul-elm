@@ -137,6 +137,27 @@ def ytdlp_base_opts(*, use_cookies: bool = True, player_clients: list[str] | Non
     return opts
 
 
+# Bot yoxlaması / player cavabı — prefetch-i dayandırmağa dəyər xətalar
+_BLOCKING_ERROR_MARKERS = (
+    'bot yoxlaması',
+    'player cavab vermədi',
+    'müvəqqəti cavab vermədi',
+    'sign in to confirm',
+    'not a bot',
+    'cookies-from-browser',
+    'confirm you',
+    'page needs to be reloaded',
+    'failed to extract any player response',
+    'datacenter ip',
+)
+
+
+def is_blocking_ytdlp_error(exc: BaseException | str | None) -> bool:
+    """Bot yoxlaması / player cavabı kimi sistematik blok xətasıdırsa True."""
+    text = str(exc or '').lower()
+    return any(m in text for m in _BLOCKING_ERROR_MARKERS)
+
+
 def friendly_ytdlp_error(exc: BaseException | str) -> str:
     """İstifadəçiyə göstərilən qısa Azərbaycan mesajı."""
     text = str(exc or '')

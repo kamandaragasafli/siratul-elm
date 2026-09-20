@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from .audio import (
     ensure_audio_file,
     lesson_audio_size_bytes,
+    lesson_stored_audio_url,
     resolve_stream_url,
     sync_series_lessons,
 )
@@ -369,29 +370,30 @@ class VideoLessonViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'])
     def play(self, request, pk=None):
-        """Onlayn dinləmə — cache varsa o, yoxdursa YouTube stream."""
+        """Onlayn dinləmə — saxlanmış fayl varsa o, yoxdursa YouTube stream (fallback)."""
         lesson = self.get_object()
-        absolute = request.build_absolute_uri
 
-        if lesson.audio_file:
+        stored_url = lesson_stored_audio_url(lesson, request)
+        if stored_url:
             size = lesson_audio_size_bytes(lesson)
             return Response(
                 {
                     'id': lesson.id,
                     'title': lesson.title,
                     'mode': 'file',
-                    'streamUrl': absolute(lesson.audio_file.url),
-                    'downloadUrl': absolute(lesson.audio_file.url),
+                    'streamUrl': stored_url,
+                    'downloadUrl': stored_url,
                     'durationSeconds': lesson.duration_seconds,
                     'sizeBytes': size,
                     'hasAudio': True,
                 }
             )
 
+        # audio_file boş / lokalda itib — yalnız o zaman YouTube-a müraciət
         stream, duration, size_bytes, err = resolve_stream_url(lesson.url)
         if err or not stream:
             # Play zamanı serverə endirmə — Render free timeout/500 verir.
-            # Səs üçün admin «Səs hazırla» və ya prepare_audio istifadə olunsun.
+            # Səs üçün admin «Səs hazırla» və ya prepare_audio / prefetch_audio.
             return Response(
                 {'detail': err or 'Ses axi tapilmadi'},
                 status=status.HTTP_502_BAD_GATEWAY,
@@ -415,17 +417,18 @@ class VideoLessonViewSet(viewsets.ReadOnlyModelViewSet):
     def prepare_audio(self, request, pk=None):
         """Səs faylını serverə endir — sonra telefona yükləmək olar."""
         lesson = self.get_object()
-        ok, err = ensure_audio_file(lesson)
+        ok, err, _blocking = ensure_audio_file(lesson)
         if not ok:
             return Response({'ok': False, 'error': err}, status=status.HTTP_502_BAD_GATEWAY)
         lesson.refresh_from_db()
         size = lesson_audio_size_bytes(lesson)
+        download_url = lesson_stored_audio_url(lesson, request)
         return Response(
             {
                 'ok': True,
                 'id': lesson.id,
                 'title': lesson.title,
-                'downloadUrl': request.build_absolute_uri(lesson.audio_file.url),
+                'downloadUrl': download_url,
                 'durationSeconds': lesson.duration_seconds,
                 'sizeBytes': size,
                 'hasAudio': True,

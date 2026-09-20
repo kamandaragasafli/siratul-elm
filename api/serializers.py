@@ -132,7 +132,9 @@ class VideoLessonSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'url', 'order', 'hasAudio', 'durationSeconds', 'sizeBytes']
 
     def get_hasAudio(self, obj):
-        return bool(obj.audio_file)
+        from .audio import lesson_has_stored_audio
+
+        return lesson_has_stored_audio(obj)
 
     def get_sizeBytes(self, obj):
         from .audio import lesson_audio_size_bytes

@@ -9,7 +9,12 @@ from pathlib import Path
 from django.conf import settings
 from django.core.files import File
 
-from .ytdlp_opts import cookies_file_path, friendly_ytdlp_error, ytdlp_base_opts
+from .ytdlp_opts import (
+    cookies_file_path,
+    friendly_ytdlp_error,
+    is_blocking_ytdlp_error,
+    ytdlp_base_opts,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +33,7 @@ def sync_series_lessons(series) -> dict:
         return {'created': 0, 'updated': 0, 'total': 0, 'error': 'yt-dlp yoxdur'}
 
     opts = ytdlp_base_opts(
+        use_cookies=False,
         extract_flat='in_playlist',
         skip_download=True,
         ignoreerrors=True,
@@ -216,26 +222,68 @@ def lesson_audio_size_bytes(lesson) -> int | None:
     return None
 
 
-def ensure_audio_file(lesson, *, force: bool = False) -> tuple[bool, str | None]:
+def lesson_has_stored_audio(lesson) -> bool:
+    """DB-də audio_file adı varsa və (mümkünsə) lokal fayl mövcuddursa."""
+    if not lesson.audio_file or not lesson.audio_file.name:
+        return False
+    try:
+        path = Path(lesson.audio_file.path)
+        return path.exists() and path.stat().st_size > 0
+    except (NotImplementedError, ValueError):
+        # S3 / R2 / Spaces — lokal path yoxdur; storage adı kifayətdir
+        return True
+    except OSError:
+        return False
+
+
+def lesson_stored_audio_url(lesson, request=None) -> str | None:
+    """
+    Saxlanmış səs faylının URL-i (storage).
+    S3/R2 artıq absolute URL verir; lokalda request ilə absolute edilir.
+    """
+    if not lesson_has_stored_audio(lesson):
+        return None
+    try:
+        url = lesson.audio_file.url
+    except Exception:
+        return None
+    if not url:
+        return None
+    if url.startswith(('http://', 'https://')):
+        return url
+    if request is not None:
+        return request.build_absolute_uri(url)
+    return url
+
+
+def ensure_audio_file(
+    lesson, *, force: bool = False
+) -> tuple[bool, str | None, bool]:
     """
     Dərsi səs faylı kimi media-ya endirir (telefona yükləmə / sabit stream).
-    Returns: (ok, error)
+    Returns: (ok, error, is_blocking_error)
+    is_blocking_error — bot yoxlaması / player cavabı kimi sistematik xəta.
     """
     if not force and lesson.audio_file and lesson.audio_file.name:
-        path = Path(lesson.audio_file.path)
-        if path.exists() and path.stat().st_size > 0:
-            return True, None
+        try:
+            path = Path(lesson.audio_file.path)
+            if path.exists() and path.stat().st_size > 0:
+                return True, None, False
+            # Lokal disk ephemeral — fayl itib, yenidən endir
+        except (NotImplementedError, ValueError):
+            # Remote storage — artıq var
+            return True, None, False
 
     source = (lesson.url or '').strip()
     if not source and lesson.youtube_id:
         source = f'https://www.youtube.com/watch?v={lesson.youtube_id}'
     if not source:
-        return False, 'Video linki yoxdur'
+        return False, 'Video linki yoxdur', False
 
     try:
         import yt_dlp
     except ImportError:
-        return False, 'yt-dlp yoxdur'
+        return False, 'yt-dlp yoxdur', False
 
     import shutil
 
@@ -297,8 +345,9 @@ def ensure_audio_file(lesson, *, force: bool = False) -> tuple[bool, str | None]
                 last_err,
             )
     if not info:
-        logger.error('ensure_audio_file failed lesson=%s: %s', lesson.pk, last_err)
-        return False, last_err or 'Ses endirilmedi'
+        err = last_err or 'Ses endirilmedi'
+        logger.error('ensure_audio_file failed lesson=%s: %s', lesson.pk, err)
+        return False, err, is_blocking_ytdlp_error(err)
 
     # Tapilan fayl (mp3 postprocessor və ya birbaşa m4a/webm)
     ext = (info or {}).get('ext') or 'mp3'
@@ -307,7 +356,7 @@ def ensure_audio_file(lesson, *, force: bool = False) -> tuple[bool, str | None]
         # yt-dlp bəzən başqa uzantı yazır
         matches = list(out_dir.glob(f'{stem}.*'))
         if not matches:
-            return False, 'Ses fayli yaradilmadi'
+            return False, 'Ses fayli yaradilmadi', False
         candidate = matches[0]
 
     duration = (info or {}).get('duration')
@@ -316,4 +365,4 @@ def ensure_audio_file(lesson, *, force: bool = False) -> tuple[bool, str | None]
     if duration:
         lesson.duration_seconds = int(duration)
     lesson.save(update_fields=['audio_file', 'duration_seconds'])
-    return True, None
+    return True, None, False

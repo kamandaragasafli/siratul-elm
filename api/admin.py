@@ -595,7 +595,7 @@ class VideoLessonAdmin(YoutubeTitleAdminMixin, admin.ModelAdmin):
         from .audio import ensure_audio_file
 
         for lesson in queryset:
-            ok, err = ensure_audio_file(lesson)
+            ok, err, _blocking = ensure_audio_file(lesson)
             if ok:
                 messages.success(request, f'{lesson.title}: səs hazırdır')
             else:

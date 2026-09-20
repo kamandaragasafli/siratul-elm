@@ -90,16 +90,74 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STORAGES = {
-    'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-    },
-    'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
-    },
-}
+
+# ── Media storage ────────────────────────────────────────────────────────────
+# Default: lokal disk (MEDIA_ROOT). Render disk ephemeral-dır — production-da
+# AWS S3 / DigitalOcean Spaces / Cloudflare R2 təyin edin (django-storages).
+#
+# Lazımi env (nümunə — DigitalOcean Spaces):
+#   AWS_ACCESS_KEY_ID=...
+#   AWS_SECRET_ACCESS_KEY=...
+#   AWS_STORAGE_BUCKET_NAME=sirac-media
+#   AWS_S3_REGION_NAME=nyc3
+#   AWS_S3_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+#   AWS_S3_CUSTOM_DOMAIN=sirac-media.nyc3.cdn.digitaloceanspaces.com  # optional
+#
+# Cloudflare R2:
+#   AWS_S3_ENDPOINT_URL=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+#   AWS_S3_REGION_NAME=auto
+#
+# AWS S3: ENDPOINT_URL boş buraxın; REGION = us-east-1 və s.
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'media'  # yt-dlp lokal cache üçün saxlanır
+
+_AWS_BUCKET = os.environ.get('AWS_STORAGE_BUCKET_NAME', '').strip()
+_USE_S3 = os.environ.get('USE_S3', '').lower() in ('1', 'true', 'yes') or bool(_AWS_BUCKET)
+
+if _USE_S3 and _AWS_BUCKET:
+    if 'storages' not in INSTALLED_APPS:
+        INSTALLED_APPS = [*INSTALLED_APPS, 'storages']
+
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '').strip()
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '').strip()
+    AWS_STORAGE_BUCKET_NAME = _AWS_BUCKET
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1').strip()
+    AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '').strip() or None
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', '').strip() or None
+    AWS_DEFAULT_ACL = os.environ.get('AWS_DEFAULT_ACL', 'public-read').strip() or None
+    AWS_QUERYSTRING_AUTH = os.environ.get('AWS_QUERYSTRING_AUTH', '').lower() in (
+        '1',
+        'true',
+        'yes',
+    )
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_S3_FILE_OVERWRITE = False
+
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+        },
+    }
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+    elif AWS_S3_ENDPOINT_URL:
+        # Spaces / R2 path-style URL
+        MEDIA_URL = f'{AWS_S3_ENDPOINT_URL.rstrip("/")}/{AWS_STORAGE_BUCKET_NAME}/'
+    else:
+        MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/'
+else:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+        },
+    }
+
 # PDF kitab yükləməsi (panel)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 120 * 1024 * 1024  # 120 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
