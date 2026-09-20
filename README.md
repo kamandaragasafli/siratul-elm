@@ -2,15 +2,25 @@
 
 Mobil tətbiq üçün REST API. Şəbəkə / internet üzərindən işləyir.
 
-## Qurulum
+## Render (Neon Postgres) — Shell lazım deyil
 
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py seed_sample
+**Root Directory:** `backend`
+
+**Build Command:**
+```text
+bash scripts/build.sh
 ```
+
+**Start Command:**
+```text
+bash scripts/start.sh
+```
+
+Skriptlər özləri edir: `pip install` → `migrate` → admin (`Kamandar`) → `collectstatic` → gunicorn.
+
+Yalnız Environment: `DATABASE_URL` (Neon).
+
+Admin: `/admin/` → `Kamandar` / `20012001Kamandar`
 
 ## İşə salma (mobil üçün vacib)
 

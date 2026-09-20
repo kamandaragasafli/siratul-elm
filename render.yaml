@@ -1,0 +1,14 @@
+# Render Blueprint — Root Directory: backend
+services:
+  - type: web
+    name: elm-yolu
+    runtime: python
+    plan: free
+    buildCommand: bash scripts/build.sh
+    startCommand: bash scripts/start.sh
+    healthCheckPath: /api/health/
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: WEB_CONCURRENCY
+        value: "2"
