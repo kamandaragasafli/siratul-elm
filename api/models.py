@@ -205,12 +205,34 @@ class VideoLesson(models.Model):
     title = models.CharField('Dərs adı', max_length=300)
     url = models.URLField('Video linki', max_length=500, blank=True, default='')
     youtube_id = models.CharField(max_length=32, blank=True, default='', db_index=True)
+    ixlasla_id = models.PositiveIntegerField(
+        'ixlasla dərs ID',
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text='ixlasla.com API dərs id — sync üçün',
+    )
+    remote_audio_url = models.URLField(
+        'Uzaq səs URL',
+        max_length=800,
+        blank=True,
+        default='',
+        help_text='Birbaşa MP3 (məs. Backblaze) — YouTube olmadan dinləmə',
+    )
     audio_file = models.FileField(
         'Səs faylı',
         upload_to='audio/%Y/%m/',
         blank=True,
         null=True,
         help_text='Endirilmiş audio — onlayn dinləmə və telefona yükləmə',
+    )
+    audio_fetch_attempted_at = models.DateTimeField(
+        'Səs yükləmə cəhdi',
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='Son prefetch / endirmə cəhdi (gündəlik kvota üçün)',
     )
     duration_seconds = models.PositiveIntegerField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)

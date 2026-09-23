@@ -691,13 +691,13 @@
     },
     {
       "id": "son",
-      "title": "Sektə və vəqf",
+      "title": "Səktə və vəqf",
       "lessons": [
         {
           "id": "sekte",
           "number": 26,
-          "title": "Sektə",
-          "content": "Sektə sözünün lüğəti mənası sakit olmaq və ya dayanmaq deməkdir. İstilahi mənada isə qarinin qiraət zamanı səsini kəsib nəfəs almadan bir az dayanmasına deyilir və سكتة işarəsi ilə bildirilir.\n\nHəfs an-Asim (on qiraətdən biri) qiraətinə görə, Qurani-Kərimdə dörd yerdə sektə edilir:\n1. Kəhf surəsi, 1-ci ayə\n2. Yasin surəsi, 52-ci ayə\n3. Qiyamət surəsi, 27-ci ayə\n4. Mutaffifin surəsi, 14-cü ayə",
+          "title": "Səktə",
+          "content": "Səktə sözünün lüğəti mənası sakit olmaq və ya dayanmaq deməkdir. İstilahi mənada isə qarinin qiraət zamanı səsini kəsib nəfəs almadan bir az dayanmasına deyilir və سكتة işarəsi ilə bildirilir.\n\nHəfs an-Asim (on qiraətdən biri) qiraətinə görə, Qurani-Kərimdə dörd yerdə səktə edilir:\n1. Kəhf surəsi, 1-ci ayə\n2. Yasin surəsi, 52-ci ayə\n3. Qiyamət surəsi, 27-ci ayə\n4. Mutaffifin surəsi, 14-cü ayə",
           "arabicExamples": [
             {
               "label": "Kəhf 1",
@@ -716,10 +716,10 @@
               "arabic": "كَلَّا ۖ بَلْ ۜ رَانَ عَلَىٰ قُلُوبِهِم مَّا كَانُوا يَكْسِبُونَ"
             }
           ],
-          "sidebarTitle": "Sektə",
+          "sidebarTitle": "Səktə",
           "sidebarNumber": 26,
           "videoId": "hNDdwoXmm8o",
-          "videoTitle": "Təcvid müəllimi #26 — Sektə"
+          "videoTitle": "Təcvid müəllimi #26 — Səktə"
         },
         {
           "id": "isareler",
@@ -758,7 +758,7 @@
           "videoTitle": "Təcvid müəllimi #27 — Vəqf işarələri"
         }
       ],
-      "sidebarTitle": "Sektə · Vəqf"
+      "sidebarTitle": "Səktə · Vəqf"
     }
   ],
   "videoPlaylist": {

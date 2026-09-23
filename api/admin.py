@@ -582,13 +582,26 @@ class VideoLessonAdmin(YoutubeTitleAdminMixin, admin.ModelAdmin):
     form = VideoLessonForm
     list_display = ('title', 'series', 'has_audio', 'order', 'is_published')
     list_filter = ('is_published', 'series__channel')
-    search_fields = ('title', 'url', 'series__title', 'youtube_id')
-    fields = ('series', 'url', 'title', 'youtube_id', 'audio_file', 'duration_seconds', 'order', 'is_published')
+    search_fields = ('title', 'url', 'series__title', 'youtube_id', 'ixlasla_id')
+    fields = (
+        'series',
+        'url',
+        'title',
+        'youtube_id',
+        'ixlasla_id',
+        'remote_audio_url',
+        'audio_file',
+        'audio_fetch_attempted_at',
+        'duration_seconds',
+        'order',
+        'is_published',
+    )
+    readonly_fields = ('audio_fetch_attempted_at',)
     actions = ['action_prepare_audio']
 
     @admin.display(boolean=True, description='Səs')
     def has_audio(self, obj):
-        return bool(obj.audio_file)
+        return bool(obj.audio_file) or bool(getattr(obj, 'remote_audio_url', None))
 
     @admin.action(description='Səs faylını endir (media)')
     def action_prepare_audio(self, request, queryset):

@@ -209,6 +209,8 @@ LIVEKIT_SERVER_URL = os.environ.get('LIVEKIT_SERVER_URL', '').strip()
 
 # YouTube yt-dlp bot yoxlaması — Netscape cookies.txt yolu (Render disk / secret file)
 YTDLP_COOKIES_FILE = os.environ.get('YTDLP_COOKIES_FILE', '').strip()
+# PO token provider (bgutil-ytdlp-pot-provider) — məs: http://127.0.0.1:4416
+YTDLP_PO_PROVIDER_URL = os.environ.get('YTDLP_PO_PROVIDER_URL', '').strip()
 
 # ── Telegram sual-cavab (tətbiqdən birbaşa göndərmə) ────────────────────────
 # Botu «Sirac sual» qrupuna admin kimi əlavə edin; chat ID-ni getUpdates ilə alın.

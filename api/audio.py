@@ -236,24 +236,37 @@ def lesson_has_stored_audio(lesson) -> bool:
         return False
 
 
+def lesson_remote_audio_url(lesson) -> str | None:
+    """ixlasla / birbaşa MP3 linki."""
+    remote = (getattr(lesson, 'remote_audio_url', None) or '').strip()
+    if remote.startswith(('http://', 'https://')):
+        return remote
+    u = (lesson.url or '').strip()
+    if not u.startswith(('http://', 'https://')):
+        return None
+    low = u.lower()
+    if low.endswith('.mp3') or 'backblazeb2.com' in low or '/file/ixlasla/' in low:
+        return u
+    return None
+
+
 def lesson_stored_audio_url(lesson, request=None) -> str | None:
     """
-    Saxlanmış səs faylının URL-i (storage).
+    Saxlanmış səs faylının URL-i (storage) və ya uzaq MP3.
     S3/R2 artıq absolute URL verir; lokalda request ilə absolute edilir.
     """
-    if not lesson_has_stored_audio(lesson):
-        return None
-    try:
-        url = lesson.audio_file.url
-    except Exception:
-        return None
-    if not url:
-        return None
-    if url.startswith(('http://', 'https://')):
-        return url
-    if request is not None:
-        return request.build_absolute_uri(url)
-    return url
+    if lesson_has_stored_audio(lesson):
+        try:
+            url = lesson.audio_file.url
+        except Exception:
+            url = None
+        if url:
+            if url.startswith(('http://', 'https://')):
+                return url
+            if request is not None:
+                return request.build_absolute_uri(url)
+            return url
+    return lesson_remote_audio_url(lesson)
 
 
 def ensure_audio_file(
@@ -321,14 +334,18 @@ def ensure_audio_file(
             retries=3,
         )
         if shutil.which('ffmpeg'):
+            # Yalnız audio axını — /best (video) fallback olmasın
+            opts['format'] = 'bestaudio/bestaudio*'
             opts['postprocessors'] = [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
                 'preferredquality': '128',
             }]
         else:
-            opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best'
+            opts['format'] = 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio'
             opts['prefer_ffmpeg'] = False
+            # Video konteynerə düşməsin
+            opts['format_sort'] = ['aext:m4a', 'aext:webm', 'acodec', 'size']
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(source, download=True)

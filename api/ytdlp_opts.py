@@ -90,6 +90,55 @@ def cookies_file_path() -> str | None:
     return str(cache)
 
 
+def po_token_provider_url() -> str | None:
+    """bgutil / PO token HTTP provider baza URL (trailing slash-siz)."""
+    url = os.environ.get('YTDLP_PO_PROVIDER_URL', '').strip()
+    if not url:
+        try:
+            from django.conf import settings as dj_settings
+
+            url = (getattr(dj_settings, 'YTDLP_PO_PROVIDER_URL', None) or '').strip()
+        except Exception:
+            url = ''
+    return url.rstrip('/') or None
+
+
+def check_po_token_provider(*, timeout: float = 5.0) -> tuple[bool, str]:
+    """
+    PO token provider health.
+    Returns: (ok, message)
+    Gözlənilən: GET {base}/ping və ya {base}/ → 2xx
+    """
+    base = po_token_provider_url()
+    if not base:
+        return False, (
+            'YTDLP_PO_PROVIDER_URL təyin olunmayıb. '
+            'Məs: http://127.0.0.1:4416 (bgutil-ytdlp-pot-provider)'
+        )
+
+    import urllib.error
+    import urllib.request
+
+    candidates = [f'{base}/ping', f'{base}/', base]
+    last_err = 'cavab yoxdur'
+    for url in candidates:
+        try:
+            req = urllib.request.Request(url, method='GET')
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                code = getattr(resp, 'status', None) or resp.getcode()
+                if 200 <= int(code) < 300:
+                    return True, f'PO provider OK ({url} → {code})'
+                last_err = f'HTTP {code} ({url})'
+        except urllib.error.HTTPError as exc:
+            # bəzi provider-lər /ping-də 404, kökdə 200 verir
+            last_err = f'HTTP {exc.code} ({url})'
+            if exc.code == 404:
+                continue
+        except Exception as exc:
+            last_err = f'{type(exc).__name__}: {exc}'
+    return False, f'PO token provider cavab vermir: {last_err}'
+
+
 def ytdlp_base_opts(*, use_cookies: bool = True, player_clients: list[str] | None = None, **extra) -> dict:
     """Bütün YouTube extract/download üçün baza opts."""
     if player_clients is None:
@@ -99,6 +148,10 @@ def ytdlp_base_opts(*, use_cookies: bool = True, player_clients: list[str] | Non
             if env
             else ['android', 'ios']
         )
+
+    youtube_args: dict = {
+        'player_client': player_clients,
+    }
 
     opts: dict = {
         'quiet': True,
@@ -117,11 +170,16 @@ def ytdlp_base_opts(*, use_cookies: bool = True, player_clients: list[str] | Non
             'Accept-Language': 'en-US,en;q=0.9',
         },
         'extractor_args': {
-            'youtube': {
-                'player_client': player_clients,
-            },
+            'youtube': youtube_args,
         },
     }
+
+    pot_url = po_token_provider_url()
+    if pot_url:
+        # yt-dlp bgutil HTTP plugin — base_url
+        opts['extractor_args']['youtubepot-bgutilhttp'] = {
+            'base_url': pot_url,
+        }
 
     if use_cookies:
         cookiefile = cookies_file_path()

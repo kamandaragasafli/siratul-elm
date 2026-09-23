@@ -126,10 +126,20 @@ class VideoLessonSerializer(serializers.ModelSerializer):
     hasAudio = serializers.SerializerMethodField()
     durationSeconds = serializers.IntegerField(source='duration_seconds', allow_null=True)
     sizeBytes = serializers.SerializerMethodField()
+    youtubeId = serializers.CharField(source='youtube_id', allow_blank=True)
 
     class Meta:
         model = VideoLesson
-        fields = ['id', 'title', 'url', 'order', 'hasAudio', 'durationSeconds', 'sizeBytes']
+        fields = [
+            'id',
+            'title',
+            'url',
+            'order',
+            'hasAudio',
+            'durationSeconds',
+            'sizeBytes',
+            'youtubeId',
+        ]
 
     def get_hasAudio(self, obj):
         from .audio import lesson_has_stored_audio

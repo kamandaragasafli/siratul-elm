@@ -32,9 +32,21 @@ _RULES: list[tuple[LessonCategory, list[str]]] = [
         [
             r'h[əe]dis',
             r'40\s*h[əe]dis',
+            r'50\s*h[əe]dis',
             r'ş[əe]rh\s*əs',
             r'əs[-\s]?s[üu]nn',
             r's[üu]nn[əe]',
+            r'buxar',
+            r'bukhar',
+            r'm[üu]slim',
+            r'riyad',
+            r'salehl[əe]r\s*ba[gğ]',
+            r'[əe]bu\s*davud',
+            r'tirmiz',
+            r'n[əe]sai',
+            r'ibn\s*mac',
+            r's[əe]q[əe]leyn',
+            r's[əe]hih',
         ],
     ),
     (
@@ -45,6 +57,7 @@ _RULES: list[tuple[LessonCategory, list[str]]] = [
             r'sur[əe]',
             r't[əe]fsir',
             r'kafirun',
+            r'ibn\s*k[əe]sir',
         ],
     ),
     (
@@ -59,6 +72,10 @@ _RULES: list[tuple[LessonCategory, list[str]]] = [
             r'f[əe]sill',
             r'x[üu]tb',
             r'maliyy[əe]',
+            r'nikah',
+            r'talaq',
+            r'h[əe]cc',
+            r'[üu]mr[əe]',
         ],
     ),
     (
@@ -68,6 +85,7 @@ _RULES: list[tuple[LessonCategory, list[str]]] = [
             r's[əe]rah',
             r'peyg[əa]mb',
             r'h[əe]yat[ıi]',
+            r's[əe]hab',
         ],
     ),
     (
@@ -89,6 +107,7 @@ _RULES: list[tuple[LessonCategory, list[str]]] = [
             r'3\s*[əe]sas',
             r'üç\s*[əe]sas',
             r'kafir',
+            r'm[əe]nh[əe]c',
         ],
     ),
 ]

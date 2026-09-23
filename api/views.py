@@ -1,17 +1,20 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count as models_Count
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, action, parser_classes
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
+import os
 
 from .audio import (
     ensure_audio_file,
     lesson_audio_size_bytes,
+    lesson_has_stored_audio,
+    lesson_remote_audio_url,
     lesson_stored_audio_url,
     resolve_stream_url,
     sync_series_lessons,
@@ -370,30 +373,65 @@ class VideoLessonViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'])
     def play(self, request, pk=None):
-        """Onlayn dinləmə — saxlanmış fayl varsa o, yoxdursa YouTube stream (fallback)."""
+        """Onlayn dinləmə — saxlanmış fayl / uzaq MP3 (proxy) / YouTube."""
         lesson = self.get_object()
+        youtube_id = (lesson.youtube_id or '').strip()
+        if not youtube_id and lesson.url:
+            import re
 
-        stored_url = lesson_stored_audio_url(lesson, request)
-        if stored_url:
-            size = lesson_audio_size_bytes(lesson)
+            m = re.search(r'(?:v=|/shorts/|youtu\.be/)([\w-]{11})', lesson.url)
+            if m:
+                youtube_id = m.group(1)
+
+        proxy_url = request.build_absolute_uri(
+            f'/api/lessons/{lesson.pk}/proxy_stream/'
+        )
+
+        # Lokal / S3 fayl — birbaşa
+        if lesson_has_stored_audio(lesson):
+            stored_url = lesson_stored_audio_url(lesson, request)
+            if stored_url:
+                size = lesson_audio_size_bytes(lesson)
+                return Response(
+                    {
+                        'id': lesson.id,
+                        'title': lesson.title,
+                        'mode': 'file',
+                        'streamUrl': stored_url,
+                        'downloadUrl': stored_url,
+                        'durationSeconds': lesson.duration_seconds,
+                        'sizeBytes': size,
+                        'hasAudio': True,
+                        'youtubeId': youtube_id or None,
+                    }
+                )
+
+        # ixlasla MP3 — birbaşa CDN (Backblaze). Render free-də proxy bütün
+        # dinləməni dyno-dan keçirərdi (timeout/kvota). Bildiriş metadata app-dədir.
+        remote = lesson_remote_audio_url(lesson)
+        if remote:
+            use_proxy = (
+                request.query_params.get('proxy') == '1'
+                or os.environ.get('AUDIO_PROXY_REMOTE', '').lower()
+                in ('1', 'true', 'yes')
+            )
             return Response(
                 {
                     'id': lesson.id,
                     'title': lesson.title,
                     'mode': 'file',
-                    'streamUrl': stored_url,
-                    'downloadUrl': stored_url,
+                    'streamUrl': proxy_url if use_proxy else remote,
+                    'downloadUrl': remote,
                     'durationSeconds': lesson.duration_seconds,
-                    'sizeBytes': size,
+                    'sizeBytes': None,
                     'hasAudio': True,
+                    'youtubeId': youtube_id or None,
                 }
             )
 
-        # audio_file boş / lokalda itib — yalnız o zaman YouTube-a müraciət
+        # YouTube stream fallback
         stream, duration, size_bytes, err = resolve_stream_url(lesson.url)
         if err or not stream:
-            # Play zamanı serverə endirmə — Render free timeout/500 verir.
-            # Səs üçün admin «Səs hazırla» və ya prepare_audio / prefetch_audio.
             return Response(
                 {'detail': err or 'Ses axi tapilmadi'},
                 status=status.HTTP_502_BAD_GATEWAY,
@@ -405,13 +443,152 @@ class VideoLessonViewSet(viewsets.ReadOnlyModelViewSet):
                 'id': lesson.id,
                 'title': lesson.title,
                 'mode': 'stream',
-                'streamUrl': stream,
+                'streamUrl': proxy_url,
                 'downloadUrl': None,
                 'durationSeconds': duration or lesson.duration_seconds,
                 'sizeBytes': size_bytes,
                 'hasAudio': False,
+                'youtubeId': youtube_id or None,
             }
         )
+
+    @action(detail=True, methods=['get'], url_path='proxy_stream')
+    def proxy_stream(self, request, pk=None):
+        """
+        Səs axını server üzərindən — YouTube IP kilidi və ixlasla ID3
+        (loqo/metadata) telefona düşməsin.
+        """
+        import re
+        import requests as http_requests
+
+        lesson = self.get_object()
+
+        # Lokal / S3 fayl — redirect
+        if lesson_has_stored_audio(lesson):
+            stored = None
+            try:
+                stored = lesson.audio_file.url
+            except Exception:
+                stored = None
+            if stored:
+                if not stored.startswith(('http://', 'https://')):
+                    stored = request.build_absolute_uri(stored)
+                return HttpResponseRedirect(stored)
+
+        remote = lesson_remote_audio_url(lesson)
+        stream = remote
+        strip_id3 = bool(remote)
+        if not stream:
+            stream, _duration, _size, err = resolve_stream_url(lesson.url)
+            if err or not stream:
+                return Response(
+                    {'detail': err or 'Ses axi tapilmadi'},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            strip_id3 = False
+
+        upstream_headers = {
+            'User-Agent': request.META.get(
+                'HTTP_USER_AGENT',
+                'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
+            ),
+            'Accept': '*/*',
+        }
+        range_header = request.META.get('HTTP_RANGE')
+        range_starts_at_zero = True
+        if range_header:
+            upstream_headers['Range'] = range_header
+            m = re.match(r'bytes=(\d+)-', range_header.strip())
+            if m and int(m.group(1)) > 0:
+                range_starts_at_zero = False
+                strip_id3 = False
+
+        try:
+            upstream = http_requests.get(
+                stream,
+                stream=True,
+                timeout=(15, 120),
+                headers=upstream_headers,
+            )
+        except http_requests.RequestException as exc:
+            return Response(
+                {'detail': f'Səs oxunmadı: {exc}'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if upstream.status_code >= 400:
+            upstream.close()
+            return Response(
+                {'detail': f'Səs mənbəsi xətası: {upstream.status_code}'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        content_type = upstream.headers.get('Content-Type') or 'audio/mpeg'
+
+        def generate():
+            try:
+                if not strip_id3 or not range_starts_at_zero:
+                    for chunk in upstream.iter_content(chunk_size=64 * 1024):
+                        if chunk:
+                            yield chunk
+                    return
+
+                buf = b''
+                it = upstream.iter_content(chunk_size=64 * 1024)
+                while len(buf) < 10:
+                    piece = next(it, b'')
+                    if not piece:
+                        break
+                    buf += piece
+                skip = 0
+                if len(buf) >= 10 and buf.startswith(b'ID3'):
+                    size = (
+                        (buf[6] & 0x7F) << 21
+                        | (buf[7] & 0x7F) << 14
+                        | (buf[8] & 0x7F) << 7
+                        | (buf[9] & 0x7F)
+                    )
+                    skip = 10 + size
+                if skip:
+                    if len(buf) > skip:
+                        yield buf[skip:]
+                    else:
+                        need = skip - len(buf)
+                        while need > 0:
+                            piece = next(it, b'')
+                            if not piece:
+                                break
+                            if len(piece) <= need:
+                                need -= len(piece)
+                            else:
+                                yield piece[need:]
+                                need = 0
+                elif buf:
+                    yield buf
+                for chunk in it:
+                    if chunk:
+                        yield chunk
+            finally:
+                upstream.close()
+
+        response = StreamingHttpResponse(
+            generate(),
+            status=200 if strip_id3 else upstream.status_code,
+            content_type=content_type,
+        )
+        if not strip_id3:
+            for header in ('Content-Length', 'Content-Range', 'Accept-Ranges'):
+                value = upstream.headers.get(header)
+                if value:
+                    response[header] = value
+        response['Accept-Ranges'] = 'bytes'
+        response['Cache-Control'] = 'no-store'
+        safe_title = ''.join(
+            ch if ch.isalnum() or ch in ' -_' else '_'
+            for ch in (lesson.title or 'ders')[:60]
+        )
+        response['Content-Disposition'] = f'inline; filename="Sirac - {safe_title}.mp3"'
+        return response
 
     @action(detail=True, methods=['post', 'get'])
     def prepare_audio(self, request, pk=None):
