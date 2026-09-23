@@ -36,6 +36,12 @@ from .youtube import fetch_youtube_title
 
 
 @api_view(['GET'])
+def health(request):
+    """Render / uptime health check."""
+    return Response({'ok': True, 'status': 'healthy'})
+
+
+@api_view(['GET'])
 def lesson_sections(request):
     """Dərsləri mövzu bölmələrinə görə qruplaşdırır."""
     from .lesson_categories import LESSON_SECTIONS, SECTION_LABELS
