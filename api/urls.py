@@ -7,6 +7,7 @@ from .views import (
     VideoChannelViewSet,
     VideoLessonViewSet,
     VideoSeriesViewSet,
+    deploy_ixlasla_api,
     health,
     hifz_evaluate,
     lesson_sections,
@@ -28,6 +29,7 @@ router.register('lessons', VideoLessonViewSet, basename='lesson')
 
 urlpatterns = [
     path('health/', health, name='health'),
+    path('deploy-ixlasla/', deploy_ixlasla_api, name='deploy-ixlasla'),
     path('quran-meal-notes/', quran_meal_notes, name='quran-meal-notes'),
     path('support/', support_create, name='support-create'),
     path('quran-qa/', quran_qa_create, name='quran-qa-create'),

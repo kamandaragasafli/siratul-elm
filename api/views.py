@@ -76,13 +76,51 @@ def lesson_sections(request):
     return Response({'sections': sections, 'count': len(sections)})
 
 
-@api_view(['GET'])
-def health(request):
+@api_view(['GET', 'POST'])
+def deploy_ixlasla_api(request):
+    """
+    Shell olmadan bir dəfəlik sync.
+    Render env: DEPLOY_IXLASLA_SECRET=... sonra:
+      https://elm-yolu.onrender.com/api/deploy-ixlasla/?key=SECRET
+    Bitəndən sonra secret-i sil.
+    """
+    import threading
+
+    from .ixlasla import sync_ixlasla
+    from .models import VideoChannel, VideoLesson
+
+    expected = (os.environ.get('DEPLOY_IXLASLA_SECRET') or '').strip()
+    provided = (
+        request.query_params.get('key')
+        or request.data.get('key')
+        or request.headers.get('X-Deploy-Key')
+        or ''
+    ).strip()
+    if not expected or provided != expected:
+        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+    def run():
+        try:
+            yt = VideoChannel.objects.filter(
+                Q(url__icontains='youtube.com') | Q(url__icontains='youtu.be')
+            )
+            yt.delete()
+            VideoLesson.objects.filter(
+                Q(youtube_id__gt='')
+                | Q(url__icontains='youtube.com')
+                | Q(url__icontains='youtu.be')
+            ).exclude(remote_audio_url__gt='').delete()
+            sync_ixlasla()
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception('deploy_ixlasla_api failed')
+
+    threading.Thread(target=run, daemon=True).start()
     return Response(
         {
             'ok': True,
-            'service': 'sirac-api',
-            'time': timezone.now().isoformat(),
+            'detail': 'ixlasla sync started in background (3–5 dəq). Sonra secret sil.',
         }
     )
 

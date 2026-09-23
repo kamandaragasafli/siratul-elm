@@ -19,4 +19,13 @@ python manage.py ensure_superuser
 echo "==> collectstatic"
 python manage.py collectstatic --noinput
 
+# Shell yoxdursa: Render Environment-də DEPLOY_IXLASLA=1 qoy → Manual Deploy.
+# Sync bitəndən sonra bu env-i sil (hər build-də 3–5 dəq çəkməsin).
+if [ "${DEPLOY_IXLASLA:-}" = "1" ]; then
+  echo "==> deploy_ixlasla (YouTube sil + ixlasla MP3 sync)"
+  python manage.py deploy_ixlasla
+else
+  echo "==> skip deploy_ixlasla (DEPLOY_IXLASLA!=1)"
+fi
+
 echo "==> build OK"
