@@ -142,9 +142,9 @@ class VideoLessonSerializer(serializers.ModelSerializer):
         ]
 
     def get_hasAudio(self, obj):
-        from .audio import lesson_has_stored_audio
+        from .audio import lesson_has_stored_audio, lesson_remote_audio_url
 
-        return lesson_has_stored_audio(obj)
+        return lesson_has_stored_audio(obj) or bool(lesson_remote_audio_url(obj))
 
     def get_sizeBytes(self, obj):
         from .audio import lesson_audio_size_bytes
@@ -173,6 +173,9 @@ class VideoSeriesSerializer(serializers.ModelSerializer):
         ]
 
     def get_lessonCount(self, obj):
+        annotated = getattr(obj, 'lesson_count', None)
+        if annotated is not None:
+            return int(annotated)
         return obj.lessons.filter(is_published=True).count()
 
 
@@ -186,6 +189,9 @@ class VideoSeriesBriefSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'category', 'order', 'lessonCount', 'channelId', 'channelName']
 
     def get_lessonCount(self, obj):
+        annotated = getattr(obj, 'lesson_count', None)
+        if annotated is not None:
+            return int(annotated)
         return obj.lessons.filter(is_published=True).count()
 
 
@@ -222,6 +228,9 @@ class VideoChannelSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'url', 'description', 'seriesCount']
 
     def get_seriesCount(self, obj):
+        annotated = getattr(obj, 'series_count', None)
+        if annotated is not None:
+            return int(annotated)
         return obj.series.filter(is_published=True).count()
 
 
@@ -233,7 +242,12 @@ class VideoChannelDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'url', 'description', 'series']
 
     def get_series(self, obj):
-        qs = obj.series.filter(is_published=True)
+        # Prefetch varsa (annotate lesson_count) təkrar sorğu etmə
+        prefetched = getattr(obj, '_prefetched_objects_cache', {}).get('series')
+        if prefetched is not None:
+            qs = prefetched
+        else:
+            qs = obj.series.filter(is_published=True)
         return VideoSeriesSerializer(qs, many=True).data
 
 

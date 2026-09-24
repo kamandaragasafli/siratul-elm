@@ -44,14 +44,23 @@ def health(request):
 @api_view(['GET'])
 def lesson_sections(request):
     """Dərsləri mövzu bölmələrinə görə qruplaşdırır."""
+    from django.db.models import Count
+
     from .lesson_categories import LESSON_SECTIONS, SECTION_LABELS
 
+    # annotate — 18k+ dərs olanda hər silsilə üçün ayrı COUNT timeout verir
     qs = (
         VideoSeries.objects.filter(
             is_published=True,
             channel__is_published=True,
         )
         .select_related('channel')
+        .annotate(
+            lesson_count=Count(
+                'lessons',
+                filter=Q(lessons__is_published=True),
+            )
+        )
         .order_by('order', 'title')
     )
 
@@ -65,7 +74,7 @@ def lesson_sections(request):
                 'category': cat,
                 'channelId': series.channel_id,
                 'channelName': series.channel.name,
-                'lessonCount': series.lessons.filter(is_published=True).count(),
+                'lessonCount': int(getattr(series, 'lesson_count', 0) or 0),
             }
         )
 
@@ -365,7 +374,29 @@ class BookViewSet(viewsets.ReadOnlyModelViewSet):
 
 class VideoChannelViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
-        return VideoChannel.objects.filter(is_published=True).prefetch_related('series__lessons')
+        from django.db.models import Count, Prefetch
+
+        qs = VideoChannel.objects.filter(is_published=True)
+        if self.action == 'list':
+            return qs.annotate(
+                series_count=Count(
+                    'series',
+                    filter=Q(series__is_published=True),
+                )
+            )
+        if self.action == 'retrieve':
+            series_qs = (
+                VideoSeries.objects.filter(is_published=True)
+                .annotate(
+                    lesson_count=Count(
+                        'lessons',
+                        filter=Q(lessons__is_published=True),
+                    )
+                )
+                .order_by('order', 'title')
+            )
+            return qs.prefetch_related(Prefetch('series', queryset=series_qs))
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
