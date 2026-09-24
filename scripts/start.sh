@@ -8,11 +8,13 @@ export DJANGO_SUPERUSER_USERNAME="${DJANGO_SUPERUSER_USERNAME:-Kamandar}"
 export DJANGO_SUPERUSER_PASSWORD="${DJANGO_SUPERUSER_PASSWORD:-20012001Kamandar}"
 export DJANGO_SUPERUSER_EMAIL="${DJANGO_SUPERUSER_EMAIL:-kamandar@localhost}"
 
+RETRY=(bash scripts/db_retry.sh)
+
 echo "==> migrate"
-python manage.py migrate --noinput
+"${RETRY[@]}" python manage.py migrate --noinput
 
 echo "==> ensure_superuser (${DJANGO_SUPERUSER_USERNAME})"
-python manage.py ensure_superuser
+"${RETRY[@]}" python manage.py ensure_superuser
 
 echo "==> collectstatic"
 python manage.py collectstatic --noinput

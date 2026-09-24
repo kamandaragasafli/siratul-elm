@@ -77,10 +77,13 @@ _DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 if _DATABASE_URL:
     import dj_database_url
 
+    # Neon serverless: uzun yaşayan bağlantı SSL ilə kəsilir.
+    # Pooler URL (-pooler) + qısa/conn_max_age=0 tövsiyə olunur.
+    _conn_max_age = int(os.environ.get('DB_CONN_MAX_AGE', '0') or '0')
     DATABASES = {
         'default': dj_database_url.config(
             default=_DATABASE_URL,
-            conn_max_age=600,
+            conn_max_age=_conn_max_age,
             conn_health_checks=True,
             ssl_require=True,
         )
