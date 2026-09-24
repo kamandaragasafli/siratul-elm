@@ -44,23 +44,31 @@ def health(request):
 @api_view(['GET'])
 def lesson_sections(request):
     """Dərsləri mövzu bölmələrinə görə qruplaşdırır."""
+    from django.core.cache import cache
     from django.db.models import Count
 
     from .lesson_categories import LESSON_SECTIONS, SECTION_LABELS
 
-    # annotate — 18k+ dərs olanda hər silsilə üçün ayrı COUNT timeout verir
+    cache_key = 'lesson_sections:v3'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return Response(cached)
+
+    # Bir GROUP BY — 358× ayrı COUNT (~40s) əvəzinə.
+    lesson_counts = {
+        row['series_id']: row['c']
+        for row in VideoLesson.objects.filter(is_published=True)
+        .values('series_id')
+        .annotate(c=Count('id'))
+    }
+
     qs = (
         VideoSeries.objects.filter(
             is_published=True,
             channel__is_published=True,
         )
         .select_related('channel')
-        .annotate(
-            lesson_count=Count(
-                'lessons',
-                filter=Q(lessons__is_published=True),
-            )
-        )
+        .only('id', 'title', 'category', 'channel_id', 'order', 'channel__name')
         .order_by('order', 'title')
     )
 
@@ -74,7 +82,7 @@ def lesson_sections(request):
                 'category': cat,
                 'channelId': series.channel_id,
                 'channelName': series.channel.name,
-                'lessonCount': int(getattr(series, 'lesson_count', 0) or 0),
+                'lessonCount': int(lesson_counts.get(series.id, 0)),
             }
         )
 
@@ -88,7 +96,9 @@ def lesson_sections(request):
         for key in LESSON_SECTIONS
         if grouped[key]
     ]
-    return Response({'sections': sections, 'count': len(sections)})
+    payload = {'sections': sections, 'count': len(sections)}
+    cache.set(cache_key, payload, 300)
+    return Response(payload)
 
 
 @api_view(['GET', 'POST'])
