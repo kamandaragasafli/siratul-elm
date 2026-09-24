@@ -922,13 +922,14 @@ def livekit_token(request):
             )
 
         # room_create hamıya — boş otağa ilk girən yarada bilsin.
+        # Tələbə data (sual) göndərə bilsin.
         grant = VideoGrants(
             room_join=True,
             room_create=True,
             room=room_name,
             can_publish=is_teacher,
             can_subscribe=True,
-            can_publish_data=True if is_teacher else False,
+            can_publish_data=True,
         )
 
         http_url = (
@@ -984,7 +985,7 @@ def livekit_token(request):
             'room': room_name,
             'canPublish': is_teacher,
             'canSubscribe': True,
-            'canPublishData': bool(is_teacher),
+            'canPublishData': True,
         }
         now = int(_time.time())
         payload = {
