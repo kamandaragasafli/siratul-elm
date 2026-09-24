@@ -800,17 +800,17 @@ def livekit_token(request):
             can_publish_data=True if is_teacher else False,
         )
 
+        http_url = (
+            server_url.replace('wss://', 'https://')
+            .replace('ws://', 'http://')
+            .rstrip('/')
+        )
+
         # Otağı serverdə əvvəlcədən yarat — client 404/USER_REJECTED (kod 12) almasın.
         try:
             import asyncio
 
             from livekit import api as lk_api
-
-            http_url = (
-                server_url.replace('wss://', 'https://')
-                .replace('ws://', 'http://')
-                .rstrip('/')
-            )
 
             async def _ensure_room() -> None:
                 lk = lk_api.LiveKitAPI(http_url, api_key, api_secret)
@@ -841,14 +841,63 @@ def livekit_token(request):
         token_identity = identity
         if is_teacher:
             token_identity = f'teacher-{teacher_pin}'
-        token_jwt = (
-            AccessToken(api_key=api_key, api_secret=api_secret)
-            .with_identity(token_identity)
-            .with_name(identity)
-            .with_ttl(timedelta(hours=6))
-            .with_grants(grant)
-            .to_jwt()
-        )
+
+        # nbf-i 2 dəq geriyə çək — Render/LiveKit saat fərqi «invalid token» verməsin.
+        import time as _time
+
+        import jwt as pyjwt
+
+        grant_dict = {
+            'roomJoin': True,
+            'roomCreate': True,
+            'room': room_name,
+            'canPublish': is_teacher,
+            'canSubscribe': True,
+            'canPublishData': bool(is_teacher),
+        }
+        now = int(_time.time())
+        payload = {
+            'sub': token_identity,
+            'iss': api_key,
+            'name': identity,
+            'nbf': now - 120,
+            'exp': now + 6 * 3600,
+            'video': grant_dict,
+        }
+        token_jwt = pyjwt.encode(payload, api_secret, algorithm='HS256')
+        if isinstance(token_jwt, bytes):
+            token_jwt = token_jwt.decode('utf-8')
+
+        # İmzanı dərhal LiveKit-ə qarşı yoxla — səhv SECRET-i tez aşkar et.
+        try:
+            import urllib.error
+            import urllib.parse
+            import urllib.request
+
+            validate_url = (
+                http_url
+                + '/rtc/validate?access_token='
+                + urllib.parse.quote(token_jwt)
+            )
+            urllib.request.urlopen(validate_url, timeout=15)
+        except urllib.error.HTTPError as he:
+            body = he.read().decode('utf-8', errors='replace')[:200]
+            return Response(
+                {
+                    'error': (
+                        'LiveKit token rədd edildi (invalid token). '
+                        'Render-də LIVEKIT_API_KEY və LIVEKIT_API_SECRET '
+                        f'cloud.livekit.io layihəsi ilə eyni olmalıdır '
+                        f'({server_url}). Server: {he.code} {body}'
+                    ),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except Exception as vex:
+            # Şəbəkə xətası — tokeni yenə qaytar (client cəhd etsin)
+            import logging
+
+            logging.getLogger(__name__).warning('LiveKit validate skip: %s', vex)
     except Exception as exc:
         return Response(
             {'error': f'Token yaradılmadı: {exc}'},
@@ -864,9 +913,116 @@ def livekit_token(request):
     })
 
 
-@api_view(['POST'])
-@parser_classes([MultiPartParser, FormParser])
-def hifz_evaluate(request):
+@api_view(['GET'])
+def livekit_status(request):
+    """LiveKit KEY/SECRET/URL uyğunluğunu yoxlayır (sirri qaytarmır)."""
+    import asyncio
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    import jwt as pyjwt
+    from django.conf import settings as django_settings
+
+    api_key = getattr(django_settings, 'LIVEKIT_API_KEY', '') or ''
+    api_secret = getattr(django_settings, 'LIVEKIT_API_SECRET', '') or ''
+    server_url = getattr(django_settings, 'LIVEKIT_SERVER_URL', '') or ''
+
+    if not api_key or not api_secret or not server_url:
+        return Response(
+            {
+                'ok': False,
+                'error': 'LIVEKIT_API_KEY / SECRET / SERVER_URL Render-də boşdur.',
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    http_url = (
+        server_url.replace('wss://', 'https://')
+        .replace('ws://', 'http://')
+        .rstrip('/')
+    )
+    now = int(time.time())
+    test_jwt = pyjwt.encode(
+        {
+            'sub': 'status-check',
+            'iss': api_key,
+            'name': 'status',
+            'nbf': now - 120,
+            'exp': now + 600,
+            'video': {
+                'roomJoin': True,
+                'roomCreate': True,
+                'room': '__status_check__',
+                'canPublish': False,
+                'canSubscribe': True,
+            },
+        },
+        api_secret,
+        algorithm='HS256',
+    )
+    if isinstance(test_jwt, bytes):
+        test_jwt = test_jwt.decode('utf-8')
+
+    try:
+        urllib.request.urlopen(
+            http_url
+            + '/rtc/validate?access_token='
+            + urllib.parse.quote(test_jwt),
+            timeout=15,
+        )
+        token_ok = True
+        token_error = ''
+    except urllib.error.HTTPError as he:
+        token_ok = False
+        token_error = f'{he.code} {he.read().decode("utf-8", errors="replace")[:120]}'
+    except Exception as e:
+        token_ok = False
+        token_error = str(e)
+
+    room_ok = False
+    room_error = ''
+    try:
+        from livekit import api as lk_api
+
+        async def _list() -> int:
+            lk = lk_api.LiveKitAPI(http_url, api_key, api_secret)
+            try:
+                res = await lk.room.list_rooms(lk_api.ListRoomsRequest())
+                return len(res.rooms or [])
+            finally:
+                await lk.aclose()
+
+        room_count = asyncio.run(_list())
+        room_ok = True
+    except Exception as e:
+        room_count = 0
+        room_error = str(e)[:200]
+
+    ok = token_ok
+    return Response(
+        {
+            'ok': ok,
+            'serverUrl': server_url,
+            'apiKeyPrefix': api_key[:6] + '…' if len(api_key) >= 6 else '?',
+            'tokenValid': token_ok,
+            'tokenError': token_error,
+            'roomApiOk': room_ok,
+            'roomCount': room_count if room_ok else None,
+            'roomError': room_error,
+            'hint': (
+                None
+                if ok
+                else (
+                    'cloud.livekit.io → Project Settings → Keys: '
+                    'API Key + Secret-i kopyalayıb Render Environment-ə yapışdırın. '
+                    'LIVEKIT_SERVER_URL həmin layihənin wss:// URL-i olmalıdır.'
+                )
+            ),
+        },
+        status=status.HTTP_200_OK if ok else status.HTTP_503_SERVICE_UNAVAILABLE,
+    )
     """Hifz: səs faylı + ayə mətni → Whisper + lokal müqayisə + yazılı təcvid."""
     from django.conf import settings
 

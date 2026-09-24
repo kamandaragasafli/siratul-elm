@@ -205,9 +205,14 @@ HIFZ_MAX_AUDIO_MB = int(os.environ.get('HIFZ_MAX_AUDIO_MB', '12'))
 
 # ── LiveKit (cloud.livekit.io və ya öz serveriniz — mütləq wss://) ───────────
 # Render Environment-də təyin edin. Default lokal IP APK-də işləmir.
-LIVEKIT_API_KEY = os.environ.get('LIVEKIT_API_KEY', '').strip()
-LIVEKIT_API_SECRET = os.environ.get('LIVEKIT_API_SECRET', '').strip()
-LIVEKIT_SERVER_URL = os.environ.get('LIVEKIT_SERVER_URL', '').strip()
+# Vacib: KEY + SECRET eyni LiveKit layihəsindən olmalıdır (URL ilə uyğun).
+def _env_clean(name: str) -> str:
+    return (os.environ.get(name, '') or '').strip().strip('"').strip("'").strip()
+
+
+LIVEKIT_API_KEY = _env_clean('LIVEKIT_API_KEY')
+LIVEKIT_API_SECRET = _env_clean('LIVEKIT_API_SECRET')
+LIVEKIT_SERVER_URL = _env_clean('LIVEKIT_SERVER_URL')
 # Müəllim kodları Django admin → «Canlı yayım müəllimləri» bölməsindədir.
 
 # YouTube yt-dlp bot yoxlaması — Netscape cookies.txt yolu (Render disk / secret file)

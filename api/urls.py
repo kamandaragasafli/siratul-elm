@@ -12,6 +12,7 @@ from .views import (
     hifz_evaluate,
     lesson_sections,
     livekit_token,
+    livekit_status,
     live_teacher_lookup,
     quran_meal_notes,
     quran_qa_create,
@@ -38,6 +39,7 @@ urlpatterns = [
     path('lesson-sections/', lesson_sections, name='lesson-sections'),
     path('hifz/evaluate/', hifz_evaluate, name='hifz-evaluate'),
     path('live/token/', livekit_token, name='livekit-token'),
+    path('live/status/', livekit_status, name='livekit-status'),
     path('live/teacher/', live_teacher_lookup, name='live-teacher-lookup'),
     path('', include(router.urls)),
 ]
