@@ -789,6 +789,7 @@ def livekit_token(request):
 
         grant = VideoGrants(
             room_join=True,
+            room_create=is_teacher,
             room=room_name,
             can_publish=is_teacher,
             can_subscribe=True,
