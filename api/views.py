@@ -851,9 +851,11 @@ def live_session_start(request):
 @api_view(['POST'])
 def live_session_end(request):
     """
-    Yayımı bitir — Keçmiş bölməsinə düşür.
+    Yayımı bitir — Keçmiş; LiveKit otağını sil → hamı atılır.
     Body: { teacherPin, lessonId? , roomName? }
     """
+    from datetime import timedelta
+
     from django.utils import timezone
 
     teacher_pin = (request.data.get('teacherPin') or '').strip()
@@ -884,8 +886,6 @@ def live_session_end(request):
     if lesson is None:
         return Response({'error': 'Dərs tapılmadı.'}, status=status.HTTP_404_NOT_FOUND)
 
-    from datetime import timedelta
-
     now = timezone.now()
     lesson.force_status = 'ended'
     lesson.ends_at = now
@@ -893,13 +893,54 @@ def live_session_end(request):
         lesson.starts_at = now - timedelta(minutes=1)
     lesson.save(update_fields=['force_status', 'ends_at', 'starts_at', 'updated_at'])
 
+    kick_room = (lesson.livekit_room_name or room_name or '').strip()
+    if kick_room:
+        _livekit_delete_room(kick_room)
+
     return Response(
         {
             'ok': True,
             'id': lesson.id,
             'status': lesson.effective_status(),
+            'roomClosed': bool(kick_room),
         }
     )
+
+
+def _livekit_delete_room(room_name: str) -> None:
+    """Otağı sil — bütün iştirakçılar disconnect olur."""
+    import asyncio
+    import logging
+
+    from django.conf import settings as django_settings
+
+    api_key = getattr(django_settings, 'LIVEKIT_API_KEY', '') or ''
+    api_secret = getattr(django_settings, 'LIVEKIT_API_SECRET', '') or ''
+    server_url = getattr(django_settings, 'LIVEKIT_SERVER_URL', '') or ''
+    if not api_key or not api_secret or not server_url or not room_name:
+        return
+
+    http_url = (
+        server_url.replace('wss://', 'https://')
+        .replace('ws://', 'http://')
+        .rstrip('/')
+    )
+
+    try:
+        from livekit import api as lk_api
+
+        async def _delete() -> None:
+            lk = lk_api.LiveKitAPI(http_url, api_key, api_secret)
+            try:
+                await lk.room.delete_room(lk_api.DeleteRoomRequest(room=room_name))
+            finally:
+                await lk.aclose()
+
+        asyncio.run(_delete())
+    except Exception:
+        logging.getLogger(__name__).exception(
+            'LiveKit delete_room failed for %s', room_name
+        )
 
 
 @api_view(['POST'])
@@ -907,20 +948,28 @@ def livekit_token(request):
     """
     LiveKit JWT token yaradır.
 
-    Body: { roomName, role: "teacher"|"student", teacherPin? }
+    Body: { roomName, role: "teacher"|"student", teacherPin?, displayName? }
     Müəllim: teacherPin ilə admin-dəki kod yoxlanılır, ad avtomatik təyin olunur.
+    Tələbə: displayName (username) məcburidir.
     Cavab: { token, serverUrl, role, identity, teacherName? }
     """
-    from datetime import timedelta
     from django.conf import settings as django_settings
 
     room_name = (request.data.get('roomName') or '').strip()
     role = (request.data.get('role') or 'student').strip()
     teacher_pin = (request.data.get('teacherPin') or '').strip()
+    display_name = (
+        request.data.get('displayName')
+        or request.data.get('identity')
+        or request.data.get('name')
+        or ''
+    )
+    display_name = str(display_name).strip()[:40]
 
     if not room_name:
         return Response({'error': 'roomName lazımdır.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    import re
     import uuid
 
     is_teacher = False
@@ -937,6 +986,13 @@ def livekit_token(request):
         identity = teacher.name[:80]
         teacher_name = teacher.name
         is_teacher = True
+    else:
+        if len(display_name) < 2:
+            return Response(
+                {'error': 'İstifadəçi adı yazın (ən azı 2 hərf).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        identity = display_name
 
     try:
         from livekit.api import AccessToken, VideoGrants
@@ -962,8 +1018,6 @@ def livekit_token(request):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-        # room_create hamıya — boş otağa ilk girən yarada bilsin.
-        # Tələbə data (sual) göndərə bilsin.
         grant = VideoGrants(
             room_join=True,
             room_create=True,
@@ -979,7 +1033,6 @@ def livekit_token(request):
             .rstrip('/')
         )
 
-        # Otağı serverdə əvvəlcədən yarat — client 404/USER_REJECTED (kod 12) almasın.
         try:
             import asyncio
 
@@ -996,7 +1049,6 @@ def livekit_token(request):
                         )
                     )
                 except Exception:
-                    # Otaq artıq varsa və ya API xəta versə — token yenə işləyə bilər
                     pass
                 finally:
                     await lk.aclose()
@@ -1009,13 +1061,15 @@ def livekit_token(request):
                 'LiveKit create_room failed for %s', room_name
             )
 
-        # Identity həmişə ASCII — ərəb/az hərflər bəzən WebSocket auth-da problem yaradır.
-        # Ad (name) UI üçündür.
-        token_identity = identity
+        # Identity ASCII (JWT sub) — ad UI üçün name sahəsində
         if is_teacher:
             token_identity = f'teacher-{teacher_pin}'
+        else:
+            slug = re.sub(r'[^a-zA-Z0-9]+', '-', display_name)[:20].strip('-').lower()
+            if not slug:
+                slug = 'user'
+            token_identity = f'{slug}-{uuid.uuid4().hex[:6]}'
 
-        # nbf-i 2 dəq geriyə çək — Render/LiveKit saat fərqi «invalid token» verməsin.
         import time as _time
 
         import jwt as pyjwt
@@ -1041,7 +1095,6 @@ def livekit_token(request):
         if isinstance(token_jwt, bytes):
             token_jwt = token_jwt.decode('utf-8')
 
-        # İmzanı dərhal LiveKit-ə qarşı yoxla — səhv SECRET-i tez aşkar et.
         try:
             import urllib.error
             import urllib.parse
@@ -1067,7 +1120,6 @@ def livekit_token(request):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         except Exception as vex:
-            # Şəbəkə xətası — tokeni yenə qaytar (client cəhd etsin)
             import logging
 
             logging.getLogger(__name__).warning('LiveKit validate skip: %s', vex)
@@ -1089,7 +1141,6 @@ def livekit_token(request):
 @api_view(['GET'])
 def livekit_status(request):
     """LiveKit KEY/SECRET/URL uyğunluğunu yoxlayır (sirri qaytarmır)."""
-    import asyncio
     import time
     import urllib.error
     import urllib.parse
@@ -1145,57 +1196,36 @@ def livekit_status(request):
             + urllib.parse.quote(test_jwt),
             timeout=15,
         )
-        token_ok = True
-        token_error = ''
+        return Response(
+            {
+                'ok': True,
+                'serverUrl': server_url,
+                'keyPrefix': api_key[:6] + '…',
+            }
+        )
     except urllib.error.HTTPError as he:
-        token_ok = False
-        token_error = f'{he.code} {he.read().decode("utf-8", errors="replace")[:120]}'
-    except Exception as e:
-        token_ok = False
-        token_error = str(e)
+        body = he.read().decode('utf-8', errors='replace')[:200]
+        return Response(
+            {
+                'ok': False,
+                'error': f'LiveKit validate uğursuz: {he.code} {body}',
+                'serverUrl': server_url,
+                'keyPrefix': api_key[:6] + '…',
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    except Exception as exc:
+        return Response(
+            {'ok': False, 'error': str(exc), 'serverUrl': server_url},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
-    room_ok = False
-    room_error = ''
-    try:
-        from livekit import api as lk_api
 
-        async def _list() -> int:
-            lk = lk_api.LiveKitAPI(http_url, api_key, api_secret)
-            try:
-                res = await lk.room.list_rooms(lk_api.ListRoomsRequest())
-                return len(res.rooms or [])
-            finally:
-                await lk.aclose()
-
-        room_count = asyncio.run(_list())
-        room_ok = True
-    except Exception as e:
-        room_count = 0
-        room_error = str(e)[:200]
-
-    ok = token_ok
-    return Response(
-        {
-            'ok': ok,
-            'serverUrl': server_url,
-            'apiKeyPrefix': api_key[:6] + '…' if len(api_key) >= 6 else '?',
-            'tokenValid': token_ok,
-            'tokenError': token_error,
-            'roomApiOk': room_ok,
-            'roomCount': room_count if room_ok else None,
-            'roomError': room_error,
-            'hint': (
-                None
-                if ok
-                else (
-                    'cloud.livekit.io → Project Settings → Keys: '
-                    'API Key + Secret-i kopyalayıb Render Environment-ə yapışdırın. '
-                    'LIVEKIT_SERVER_URL həmin layihənin wss:// URL-i olmalıdır.'
-                )
-            ),
-        },
-        status=status.HTTP_200_OK if ok else status.HTTP_503_SERVICE_UNAVAILABLE,
-    )
+@api_view(['GET'])
+def push_status(request):
+    """Neçə cihaz push qeydiyyatındadır (diaqnostika)."""
+    count = PushDevice.objects.count()
+    return Response({'ok': True, 'devices': count})
 
 
 @api_view(['POST'])
