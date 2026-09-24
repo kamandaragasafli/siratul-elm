@@ -739,6 +739,7 @@ def livekit_token(request):
     Müəllim: teacherPin ilə admin-dəki kod yoxlanılır, ad avtomatik təyin olunur.
     Cavab: { token, serverUrl, role, identity, teacherName? }
     """
+    from datetime import timedelta
     from django.conf import settings as django_settings
 
     room_name = (request.data.get('roomName') or '').strip()
@@ -748,8 +749,10 @@ def livekit_token(request):
     if not room_name:
         return Response({'error': 'roomName lazımdır.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    import uuid
+
     is_teacher = False
-    identity = 'Qonaq'
+    identity = f'Qonaq-{uuid.uuid4().hex[:8]}'
     teacher_name = ''
 
     if role == 'teacher':
@@ -787,9 +790,10 @@ def livekit_token(request):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+        # room_create hamıya — boş otağa ilk girən yarada bilsin.
         grant = VideoGrants(
             room_join=True,
-            room_create=is_teacher,
+            room_create=True,
             room=room_name,
             can_publish=is_teacher,
             can_subscribe=True,
@@ -799,6 +803,7 @@ def livekit_token(request):
             AccessToken(api_key=api_key, api_secret=api_secret)
             .with_identity(identity)
             .with_name(identity)
+            .with_ttl(timedelta(hours=6))
             .with_grants(grant)
             .to_jwt()
         )
