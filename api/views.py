@@ -20,7 +20,7 @@ from .audio import (
     sync_series_lessons,
 )
 from .telegram_notify import format_qa_telegram_message, send_telegram_message
-from .models import Book, SupportMessage, TelegramLiveLesson, LiveTeacherCode, QuranMealNote, VideoChannel, VideoLesson, VideoSeries
+from .models import Book, SupportMessage, TelegramLiveLesson, LiveTeacherCode, PushDevice, QuranMealNote, VideoChannel, VideoLesson, VideoSeries
 from .serializers import (
     BookListSerializer,
     BookSerializer,
@@ -711,6 +711,26 @@ class TelegramLiveLessonViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(['POST'])
+def push_register(request):
+    """
+    Expo Push token qeydiyyatı.
+    Body: { token: "ExponentPushToken[...]", platform?: "android"|"ios" }
+    """
+    token = (request.data.get('token') or '').strip()
+    platform = (request.data.get('platform') or '').strip()[:20]
+    if not token or not (
+        token.startswith('ExponentPushToken[') or token.startswith('ExpoPushToken[')
+    ):
+        return Response({'error': 'Etibarlı Expo token lazımdır.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    obj, created = PushDevice.objects.update_or_create(
+        token=token,
+        defaults={'platform': platform},
+    )
+    return Response({'ok': True, 'created': created, 'id': obj.id})
+
+
+@api_view(['POST'])
 def live_teacher_lookup(request):
     """Müəllim kodunu yoxlayır — adı qaytarır (mobil UI önizləmə və yayım)."""
     code = (request.data.get('code') or '').strip()
@@ -734,15 +754,19 @@ def _resolve_teacher_by_code(code: str) -> LiveTeacherCode | None:
 def live_session_start(request):
     """
     Müəllim canlı yayıma başlayanda cədvələ yazır (status=live).
-    Body: { title, roomName, teacherPin }
+    Body: { title, roomName, teacherPin, notify? }
+    notify=true → bütün cihazlara push (Yayımı Başlat zamanı).
     """
     from datetime import timedelta
 
     from django.utils import timezone
 
+    from .push import notify_live_started
+
     title = (request.data.get('title') or '').strip()[:300]
     room_name = (request.data.get('roomName') or '').strip()[:200]
     teacher_pin = (request.data.get('teacherPin') or '').strip()
+    notify = bool(request.data.get('notify'))
 
     if not title:
         return Response({'error': 'Başlıq lazımdır.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -794,6 +818,22 @@ def live_session_start(request):
             is_published=True,
         )
 
+    push_result = None
+    if notify:
+        # 10 dəq içində təkrar göndərmə
+        recently = (
+            lesson.push_notified_at
+            and (now - lesson.push_notified_at).total_seconds() < 600
+        )
+        if not recently:
+            push_result = notify_live_started(
+                title=lesson.title,
+                teacher_name=lesson.teacher_name,
+                lesson_id=lesson.id,
+            )
+            lesson.push_notified_at = now
+            lesson.save(update_fields=['push_notified_at', 'updated_at'])
+
     return Response(
         {
             'ok': True,
@@ -802,6 +842,7 @@ def live_session_start(request):
             'teacherName': lesson.teacher_name,
             'roomName': lesson.livekit_room_name,
             'status': lesson.effective_status(),
+            'push': push_result,
         },
         status=status.HTTP_201_CREATED,
     )

@@ -16,6 +16,7 @@ from .views import (
     livekit_token,
     livekit_status,
     live_teacher_lookup,
+    push_register,
     quran_meal_notes,
     quran_qa_create,
     support_create,
@@ -45,5 +46,6 @@ urlpatterns = [
     path('live/teacher/', live_teacher_lookup, name='live-teacher-lookup'),
     path('live/session/start/', live_session_start, name='live-session-start'),
     path('live/session/end/', live_session_end, name='live-session-end'),
+    path('push/register/', push_register, name='push-register'),
     path('', include(router.urls)),
 ]

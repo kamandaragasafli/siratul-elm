@@ -3,7 +3,7 @@ from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.utils.text import slugify
 
-from .models import Book, Chapter, LiveTeacherCode, QuranMealNote, SupportMessage, VideoChannel, VideoLesson, VideoSeries
+from .models import Book, Chapter, LiveTeacherCode, PushDevice, QuranMealNote, SupportMessage, VideoChannel, VideoLesson, VideoSeries
 from .youtube import fetch_youtube_title, sync_channel_playlists
 
 
@@ -623,6 +623,18 @@ class LiveTeacherCodeAdmin(admin.ModelAdmin):
     ordering = ('name', 'id')
     fields = ('name', 'code', 'is_active', 'created_at', 'updated_at')
     readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(PushDevice)
+class PushDeviceAdmin(admin.ModelAdmin):
+    list_display = ('platform', 'token_short', 'updated_at', 'created_at')
+    search_fields = ('token', 'platform')
+    readonly_fields = ('token', 'platform', 'created_at', 'updated_at')
+
+    @admin.display(description='Token')
+    def token_short(self, obj):
+        t = obj.token or ''
+        return (t[:40] + '…') if len(t) > 40 else t
 
 
 @admin.register(QuranMealNote)

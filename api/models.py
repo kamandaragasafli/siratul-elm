@@ -346,6 +346,12 @@ class TelegramLiveLesson(models.Model):
         default=False,
         help_text='İşarələnəndə LiveKit daxili yayım aktiv olur (Telegram linki əvəzinə).',
     )
+    push_notified_at = models.DateTimeField(
+        'Push bildiriş vaxtı',
+        null=True,
+        blank=True,
+        help_text='Yayım başlayanda son push göndərilmə vaxtı (təkrar spam olmasın).',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -397,6 +403,23 @@ class LiveTeacherCode(models.Model):
     def save(self, *args, **kwargs):
         self.code = (self.code or '').strip()
         super().save(*args, **kwargs)
+
+
+class PushDevice(models.Model):
+    """Expo Push token — canlı yayım bildirişləri üçün."""
+
+    token = models.CharField(max_length=255, unique=True, db_index=True)
+    platform = models.CharField(max_length=20, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'Push cihaz'
+        verbose_name_plural = 'Push cihazlar'
+
+    def __str__(self):
+        return f'{self.platform or "?"} · {self.token[:28]}…'
 
 
 class QuranMealNote(models.Model):
