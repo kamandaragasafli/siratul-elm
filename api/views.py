@@ -787,17 +787,20 @@ def livekit_token(request):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-        at = AccessToken(api_key=api_key, api_secret=api_secret)
-        at.identity = identity
-        at.name = identity
-        at.video = VideoGrants(
+        grant = VideoGrants(
             room_join=True,
             room=room_name,
             can_publish=is_teacher,
             can_subscribe=True,
             can_publish_data=is_teacher,
         )
-        token_jwt = at.to_jwt()
+        token_jwt = (
+            AccessToken(api_key=api_key, api_secret=api_secret)
+            .with_identity(identity)
+            .with_name(identity)
+            .with_grants(grant)
+            .to_jwt()
+        )
     except Exception as exc:
         return Response(
             {'error': f'Token yaradılmadı: {exc}'},
