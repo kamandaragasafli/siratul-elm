@@ -1023,6 +1023,11 @@ def livekit_status(request):
         },
         status=status.HTTP_200_OK if ok else status.HTTP_503_SERVICE_UNAVAILABLE,
     )
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+def hifz_evaluate(request):
     """Hifz: səs faylı + ayə mətni → Whisper + lokal müqayisə + yazılı təcvid."""
     from django.conf import settings
 
