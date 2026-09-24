@@ -11,6 +11,8 @@ from .views import (
     health,
     hifz_evaluate,
     lesson_sections,
+    live_session_end,
+    live_session_start,
     livekit_token,
     livekit_status,
     live_teacher_lookup,
@@ -41,5 +43,7 @@ urlpatterns = [
     path('live/token/', livekit_token, name='livekit-token'),
     path('live/status/', livekit_status, name='livekit-status'),
     path('live/teacher/', live_teacher_lookup, name='live-teacher-lookup'),
+    path('live/session/start/', live_session_start, name='live-session-start'),
+    path('live/session/end/', live_session_end, name='live-session-end'),
     path('', include(router.urls)),
 ]

@@ -731,6 +731,137 @@ def _resolve_teacher_by_code(code: str) -> LiveTeacherCode | None:
 
 
 @api_view(['POST'])
+def live_session_start(request):
+    """
+    Müəllim canlı yayıma başlayanda cədvələ yazır (status=live).
+    Body: { title, roomName, teacherPin }
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    title = (request.data.get('title') or '').strip()[:300]
+    room_name = (request.data.get('roomName') or '').strip()[:200]
+    teacher_pin = (request.data.get('teacherPin') or '').strip()
+
+    if not title:
+        return Response({'error': 'Başlıq lazımdır.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not room_name:
+        return Response({'error': 'roomName lazımdır.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    teacher = _resolve_teacher_by_code(teacher_pin)
+    if not teacher:
+        return Response(
+            {'error': 'Kod yanlışdır və ya deaktivdir.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    now = timezone.now()
+    existing = TelegramLiveLesson.objects.filter(
+        livekit_room_name=room_name,
+        is_livekit_enabled=True,
+    ).first()
+    if existing:
+        existing.title = title
+        existing.teacher_name = teacher.name
+        existing.force_status = 'live'
+        existing.starts_at = now
+        existing.ends_at = now + timedelta(hours=3)
+        existing.is_published = True
+        existing.save(
+            update_fields=[
+                'title',
+                'teacher_name',
+                'force_status',
+                'starts_at',
+                'ends_at',
+                'is_published',
+                'updated_at',
+            ]
+        )
+        lesson = existing
+    else:
+        lesson = TelegramLiveLesson.objects.create(
+            title=title,
+            teacher_name=teacher.name,
+            description='Tətbiq daxili canlı yayım',
+            telegram_url='https://elm-yolu.onrender.com/live',
+            starts_at=now,
+            ends_at=now + timedelta(hours=3),
+            force_status='live',
+            livekit_room_name=room_name,
+            is_livekit_enabled=True,
+            is_published=True,
+        )
+
+    return Response(
+        {
+            'ok': True,
+            'id': lesson.id,
+            'title': lesson.title,
+            'teacherName': lesson.teacher_name,
+            'roomName': lesson.livekit_room_name,
+            'status': lesson.effective_status(),
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['POST'])
+def live_session_end(request):
+    """
+    Yayımı bitir — Keçmiş bölməsinə düşür.
+    Body: { teacherPin, lessonId? , roomName? }
+    """
+    from django.utils import timezone
+
+    teacher_pin = (request.data.get('teacherPin') or '').strip()
+    teacher = _resolve_teacher_by_code(teacher_pin)
+    if not teacher:
+        return Response(
+            {'error': 'Kod yanlışdır və ya deaktivdir.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    lesson_id = request.data.get('lessonId')
+    room_name = (request.data.get('roomName') or '').strip()
+    lesson = None
+    try:
+        if lesson_id not in (None, ''):
+            lesson = TelegramLiveLesson.objects.filter(pk=int(lesson_id)).first()
+    except (TypeError, ValueError):
+        lesson = None
+    if lesson is None and room_name:
+        lesson = (
+            TelegramLiveLesson.objects.filter(
+                livekit_room_name=room_name,
+                is_livekit_enabled=True,
+            )
+            .order_by('-id')
+            .first()
+        )
+    if lesson is None:
+        return Response({'error': 'Dərs tapılmadı.'}, status=status.HTTP_404_NOT_FOUND)
+
+    from datetime import timedelta
+
+    now = timezone.now()
+    lesson.force_status = 'ended'
+    lesson.ends_at = now
+    if lesson.starts_at > now:
+        lesson.starts_at = now - timedelta(minutes=1)
+    lesson.save(update_fields=['force_status', 'ends_at', 'starts_at', 'updated_at'])
+
+    return Response(
+        {
+            'ok': True,
+            'id': lesson.id,
+            'status': lesson.effective_status(),
+        }
+    )
+
+
+@api_view(['POST'])
 def livekit_token(request):
     """
     LiveKit JWT token yaradır.
