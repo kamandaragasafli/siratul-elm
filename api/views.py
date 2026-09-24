@@ -797,11 +797,53 @@ def livekit_token(request):
             room=room_name,
             can_publish=is_teacher,
             can_subscribe=True,
-            can_publish_data=is_teacher,
+            can_publish_data=True if is_teacher else False,
         )
+
+        # Otağı serverdə əvvəlcədən yarat — client 404/USER_REJECTED (kod 12) almasın.
+        try:
+            import asyncio
+
+            from livekit import api as lk_api
+
+            http_url = (
+                server_url.replace('wss://', 'https://')
+                .replace('ws://', 'http://')
+                .rstrip('/')
+            )
+
+            async def _ensure_room() -> None:
+                lk = lk_api.LiveKitAPI(http_url, api_key, api_secret)
+                try:
+                    await lk.room.create_room(
+                        lk_api.CreateRoomRequest(
+                            name=room_name,
+                            empty_timeout=60 * 60,
+                            max_participants=100,
+                        )
+                    )
+                except Exception:
+                    # Otaq artıq varsa və ya API xəta versə — token yenə işləyə bilər
+                    pass
+                finally:
+                    await lk.aclose()
+
+            asyncio.run(_ensure_room())
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception(
+                'LiveKit create_room failed for %s', room_name
+            )
+
+        # Identity həmişə ASCII — ərəb/az hərflər bəzən WebSocket auth-da problem yaradır.
+        # Ad (name) UI üçündür.
+        token_identity = identity
+        if is_teacher:
+            token_identity = f'teacher-{teacher_pin}'
         token_jwt = (
             AccessToken(api_key=api_key, api_secret=api_secret)
-            .with_identity(identity)
+            .with_identity(token_identity)
             .with_name(identity)
             .with_ttl(timedelta(hours=6))
             .with_grants(grant)
