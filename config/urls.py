@@ -35,5 +35,6 @@ urlpatterns = [
     path('api/', include('api.urls')),
 ]
 
-if settings.DEBUG and not getattr(settings, 'AWS_STORAGE_BUCKET_NAME', ''):
+# Lokal disk media — remote (Supabase) aktiv olanda static serve etmə
+if settings.DEBUG and not getattr(settings, 'AWS_S3_ENDPOINT_URL', None):
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

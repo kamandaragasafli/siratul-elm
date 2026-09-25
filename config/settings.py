@@ -113,38 +113,101 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ── Media storage ────────────────────────────────────────────────────────────
 # Default: lokal disk (MEDIA_ROOT). Render disk ephemeral-dır — production-da
-# AWS S3 / DigitalOcean Spaces / Cloudflare R2 təyin edin (django-storages).
+# Supabase Storage VƏYA Cloudflare R2 (hər ikisi S3-compatible; AWS hesabı lazım deyil).
 #
-# Lazımi env (nümunə — DigitalOcean Spaces):
+# --- Cloudflare R2 (böyük PDF üçün) ---
 #   AWS_ACCESS_KEY_ID=...
 #   AWS_SECRET_ACCESS_KEY=...
-#   AWS_STORAGE_BUCKET_NAME=sirac-media
-#   AWS_S3_REGION_NAME=nyc3
-#   AWS_S3_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-#   AWS_S3_CUSTOM_DOMAIN=sirac-media.nyc3.cdn.digitaloceanspaces.com  # optional
-#
-# Cloudflare R2:
-#   AWS_S3_ENDPOINT_URL=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+#   AWS_STORAGE_BUCKET_NAME=media
 #   AWS_S3_REGION_NAME=auto
+#   AWS_S3_ENDPOINT_URL=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+#   AWS_S3_CUSTOM_DOMAIN=pub-xxxx.r2.dev   # bucket Public access → r2.dev
+#   (Supabase env-ləri olmamalı — əks halda Supabase üstün gəlir)
 #
-# AWS S3: ENDPOINT_URL boş buraxın; REGION = us-east-1 və s.
+# --- Supabase Storage ---
+#   USE_SUPABASE_STORAGE=1
+#   SUPABASE_PROJECT_REF=abcdefghij
+#   SUPABASE_STORAGE_BUCKET=media
+#   SUPABASE_S3_ACCESS_KEY=...
+#   SUPABASE_S3_SECRET_KEY=...
+#   SUPABASE_S3_REGION=eu-central-1
+#
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'  # yt-dlp lokal cache üçün saxlanır
 
-_AWS_BUCKET = os.environ.get('AWS_STORAGE_BUCKET_NAME', '').strip()
-_USE_S3 = os.environ.get('USE_S3', '').lower() in ('1', 'true', 'yes') or bool(_AWS_BUCKET)
 
-if _USE_S3 and _AWS_BUCKET:
+def _env(*names: str, default: str = '') -> str:
+    for name in names:
+        val = os.environ.get(name, '').strip()
+        if val:
+            return val
+    return default
+
+
+_SUPABASE_REF = _env('SUPABASE_PROJECT_REF')
+_BUCKET = _env('SUPABASE_STORAGE_BUCKET', 'AWS_STORAGE_BUCKET_NAME', default='media')
+_ACCESS_KEY = _env('SUPABASE_S3_ACCESS_KEY', 'AWS_ACCESS_KEY_ID')
+_SECRET_KEY = _env('SUPABASE_S3_SECRET_KEY', 'AWS_SECRET_ACCESS_KEY')
+_REGION = _env('SUPABASE_S3_REGION', 'AWS_S3_REGION_NAME', default='eu-central-1')
+
+_R2_ENDPOINT = _env('AWS_S3_ENDPOINT_URL')
+_USE_R2 = 'r2.cloudflarestorage.com' in (_R2_ENDPOINT or '')
+
+_USE_SUPABASE = (not _USE_R2) and (
+    os.environ.get('USE_SUPABASE_STORAGE', '').lower() in ('1', 'true', 'yes')
+    or bool(_SUPABASE_REF or _env('SUPABASE_S3_ACCESS_KEY'))
+)
+
+if _USE_R2:
+    # Cloudflare R2 — public URL üçün AWS_S3_CUSTOM_DOMAIN (r2.dev) mütləqdir
+    _ENDPOINT = _R2_ENDPOINT
+    _PUBLIC = _env('AWS_S3_CUSTOM_DOMAIN') or None
+    _REGION = _env('AWS_S3_REGION_NAME', default='auto')
+elif _USE_SUPABASE and (_SUPABASE_REF or _env('SUPABASE_S3_ENDPOINT_URL')):
+    _ENDPOINT = _env(
+        'SUPABASE_S3_ENDPOINT_URL',
+        'AWS_S3_ENDPOINT_URL',
+        default=(
+            f'https://{_SUPABASE_REF}.supabase.co/storage/v1/s3' if _SUPABASE_REF else ''
+        ),
+    ) or None
+    _PUBLIC = (
+        _env(
+            'SUPABASE_PUBLIC_URL',
+            'AWS_S3_CUSTOM_DOMAIN',
+            default=(
+                f'{_SUPABASE_REF}.supabase.co/storage/v1/object/public/{_BUCKET}'
+                if _SUPABASE_REF
+                else ''
+            ),
+        )
+        .removeprefix('https://')
+        .removeprefix('http://')
+        .rstrip('/')
+        or None
+    )
+elif _env('AWS_STORAGE_BUCKET_NAME') or _R2_ENDPOINT:
+    _ENDPOINT = _R2_ENDPOINT or None
+    _PUBLIC = _env('AWS_S3_CUSTOM_DOMAIN') or None
+else:
+    _ENDPOINT = None
+    _PUBLIC = None
+
+# Endpoint və ya public URL olmadan remote media açılmır (AWS S3 fallback yoxdur)
+_USE_REMOTE_MEDIA = bool(_BUCKET and _ACCESS_KEY and _SECRET_KEY and (_ENDPOINT or _PUBLIC))
+
+if _USE_REMOTE_MEDIA:
     if 'storages' not in INSTALLED_APPS:
         INSTALLED_APPS = [*INSTALLED_APPS, 'storages']
 
-    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '').strip()
-    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '').strip()
-    AWS_STORAGE_BUCKET_NAME = _AWS_BUCKET
-    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1').strip()
-    AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '').strip() or None
-    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', '').strip() or None
-    AWS_DEFAULT_ACL = os.environ.get('AWS_DEFAULT_ACL', 'public-read').strip() or None
+    # django-storages boto3 — Supabase Storage S3 gateway
+    AWS_ACCESS_KEY_ID = _ACCESS_KEY
+    AWS_SECRET_ACCESS_KEY = _SECRET_KEY
+    AWS_STORAGE_BUCKET_NAME = _BUCKET
+    AWS_S3_REGION_NAME = _REGION
+    AWS_S3_ENDPOINT_URL = _ENDPOINT or None
+    AWS_S3_CUSTOM_DOMAIN = _PUBLIC or None
+    AWS_DEFAULT_ACL = None  # Supabase ACL-siz; bucket public olmalıdır
     AWS_QUERYSTRING_AUTH = os.environ.get('AWS_QUERYSTRING_AUTH', '').lower() in (
         '1',
         'true',
@@ -152,6 +215,8 @@ if _USE_S3 and _AWS_BUCKET:
     )
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
     AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_ADDRESSING_STYLE = 'path'
 
     STORAGES = {
         'default': {
@@ -163,11 +228,8 @@ if _USE_S3 and _AWS_BUCKET:
     }
     if AWS_S3_CUSTOM_DOMAIN:
         MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-    elif AWS_S3_ENDPOINT_URL:
-        # Spaces / R2 path-style URL
-        MEDIA_URL = f'{AWS_S3_ENDPOINT_URL.rstrip("/")}/{AWS_STORAGE_BUCKET_NAME}/'
     else:
-        MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/'
+        MEDIA_URL = f'{AWS_S3_ENDPOINT_URL.rstrip("/")}/{AWS_STORAGE_BUCKET_NAME}/'
 else:
     STORAGES = {
         'default': {
