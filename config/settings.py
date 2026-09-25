@@ -240,8 +240,8 @@ else:
         },
     }
 
-# PDF kitab yükləməsi (panel)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 120 * 1024 * 1024  # 120 MB
+# PDF kitab yükləməsi (panel) — böyük skanlar üçün
+DATA_UPLOAD_MAX_MEMORY_SIZE = 250 * 1024 * 1024  # 250 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

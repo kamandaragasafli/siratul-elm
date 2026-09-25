@@ -3,262 +3,393 @@
 {% block subtitle %}Kitablar{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Kitablar</h1>
+<style>
+  .books-create {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 1100px) {
+    .books-create { grid-template-columns: 1fr; }
+  }
+  .books-create .form-panel { margin-bottom: 0; height: 100%; }
+  .books-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .books-table-wrap table { min-width: 880px; }
+  .books-table-wrap td.col-actions {
+    min-width: 200px;
+    vertical-align: middle;
+  }
+  .book-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .book-actions .btn-sm,
+  .book-actions a.btn-sm {
+    padding: 6px 11px;
+    font-size: 12px;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.2;
+  }
+  .book-actions a.btn-sm {
+    background: #eef3fb;
+    color: var(--blue);
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .book-actions a.btn-sm:hover { filter: brightness(0.97); }
+  .book-actions .inline-form { display: inline; margin: 0; }
+  .book-meta-cell {
+    max-width: 240px;
+    word-break: break-word;
+  }
+  .dir-select {
+    font-size: 12px;
+    max-width: 100px;
+    padding: 6px 8px;
+  }
+  .edit-panel {
+    border: 2px solid #cfe0ff;
+    background: #f7faff;
+  }
+  .advanced-box {
+    margin-bottom: 18px;
+  }
+  .advanced-box summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    list-style: none;
+  }
+  .advanced-box summary::-webkit-details-marker { display: none; }
+  .advanced-box summary::before {
+    content: "▸ ";
+    color: var(--muted);
+  }
+  .advanced-box[open] summary::before { content: "▾ "; }
+  .advanced-box .inner {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+</style>
 
-<section class="form-panel" id="yeni-kitab">
-  <h2>Yeni kitab əlavə et</h2>
+{% if edit_book %}
+<section class="form-panel edit-panel" id="edit-kitab">
+  <h2>Redaktə: {{ edit_book.title|truncatechars:50 }}</h2>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <input type="hidden" name="action" value="create_book" />
+    <input type="hidden" name="action" value="update_book" />
+    <input type="hidden" name="book_id" value="{{ edit_book.id }}" />
     <div class="form-grid">
       <div class="field full">
-        <label for="book_title">Başlıq</label>
-        <input id="book_title" name="title" type="text" required placeholder="Kitab adı" />
-      </div>
-      <div class="field full">
-        <label for="book_cover">Qapaq şəkli</label>
-        <input id="book_cover" name="cover_image" type="file" accept="image/jpeg,image/png,image/webp,image/*" />
-        <span class="muted" style="font-size:12px;display:block;margin-top:4px">JPG, PNG və ya WebP — tətbiqdə kitab qapağı kimi görünəcək</span>
+        <label for="edit_title">Başlıq</label>
+        <input id="edit_title" name="title" type="text" required value="{{ edit_book.title }}" />
       </div>
       <div class="field">
-        <label for="book_author">Müəllif</label>
-        <input id="book_author" name="author" type="text" placeholder="Müəllif adı" />
+        <label for="edit_author">Müəllif</label>
+        <input id="edit_author" name="author" type="text" value="{{ edit_book.author }}" />
       </div>
       <div class="field">
-        <label for="book_lang">Dil</label>
-        <select id="book_lang" name="language">
+        <label for="edit_lang">Dil</label>
+        <select id="edit_lang" name="language">
           {% for code, label in language_choices %}
-          <option value="{{ code }}">{{ label }}</option>
+          <option value="{{ code }}"{% if edit_book.language == code %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="field full">
-        <label for="book_desc">Qısa təsvir</label>
-        <input id="book_desc" name="description" type="text" placeholder="Kitab haqqında" />
-      </div>
-      <div class="field full">
-        <label for="book_topics">Mövzular (vergüllə)</label>
-        <input id="book_topics" name="topics" type="text" placeholder="əqidə, fiqh, təfsir" />
-      </div>
+      {% if edit_book.format == 'pdf' %}
       <div class="field">
-        <label class="check">
-          <input type="checkbox" name="is_published" checked /> Yayınlı olsun
-        </label>
-      </div>
-      <div class="field full">
-        <label for="ch1_title">İlk fəsil başlığı (ixtiyari)</label>
-        <input id="ch1_title" name="chapter_title" type="text" placeholder="Məs: Müqəddimə" />
-      </div>
-      <div class="field full">
-        <label for="ch1_content">İlk fəsil mətni (ixtiyari)</label>
-        <textarea id="ch1_content" name="chapter_content" rows="8" placeholder="Mətni buraya yapışdırın…"></textarea>
-      </div>
-    </div>
-    <div class="actions">
-      <button type="submit" class="btn">Kitab əlavə et</button>
-      <span class="muted" style="font-size:13px">Sonra Fəsillər səhifəsindən əlavə fəsil yaza bilərsiniz.</span>
-    </div>
-  </form>
-</section>
-
-<section class="form-panel" id="yeni-pdf">
-  <h2>PDF kitab əlavə et</h2>
-  <p class="muted" style="margin:0 0 14px;font-size:13px">
-    PDF-i buradan yükləyin — tətbiqdə avtomatik görünür. Mündəricatı özünüz yazın
-    (<code>Başlıq|səhifə</code>); fəsillər avtomatik yaranmır.
-  </p>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="create_pdf_book" />
-    <div class="form-grid">
-      <div class="field full">
-        <label for="pdf_title">Başlıq</label>
-        <input id="pdf_title" name="title" type="text" required placeholder="Kitab adı" />
-      </div>
-      <div class="field full">
-        <label for="pdf_file">PDF faylı</label>
-        <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf,.pdf" required />
-        <span class="muted" style="font-size:12px;display:block;margin-top:4px">Maks. ~100 MB</span>
-      </div>
-      <div class="field full">
-        <label for="pdf_cover">Qapaq şəkli (ixtiyari)</label>
-        <input id="pdf_cover" name="cover_image" type="file" accept="image/jpeg,image/png,image/webp,image/*" />
-      </div>
-      <div class="field">
-        <label for="pdf_author">Müəllif</label>
-        <input id="pdf_author" name="author" type="text" placeholder="Müəllif adı" />
-      </div>
-      <div class="field">
-        <label for="pdf_lang">Dil</label>
-        <select id="pdf_lang" name="language">
-          {% for code, label in language_choices %}
-          <option value="{{ code }}">{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label for="pdf_dir">Səhifə istiqaməti</label>
-        <select id="pdf_dir" name="page_direction">
+        <label for="edit_dir">Səhifə istiqaməti</label>
+        <select id="edit_dir" name="page_direction">
           {% for code, label in page_direction_choices %}
-          <option value="{{ code }}"{% if code == 'ltr' %} selected{% endif %}>{{ label }}</option>
+          <option value="{{ code }}"{% if edit_book.page_direction == code %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
+      </div>
+      <div class="field">
+        <label for="edit_pdf">PDF dəyiş (ixtiyari)</label>
+        <input id="edit_pdf" name="pdf_file" type="file" accept="application/pdf,.pdf" />
+      </div>
+      <div class="field full">
+        <label for="edit_toc">Mündəricat (Başlıq|səhifə)</label>
+        <textarea id="edit_toc" name="toc_text" rows="8" placeholder="Müqəddimə|3
+Birinci fəsil|12">{% for ch in edit_toc_lines %}{{ ch }}
+{% endfor %}</textarea>
         <span class="muted" style="font-size:12px;display:block;margin-top:4px">
-          Ərəb kitabları üçün «Sağdan sola» — PDF kitab kimi tərs çevrilir.
+          Hər sətirdə bir: <code>Başlıq|səhifə</code>. Boş saxlasanız mövcud mündəricat dəyişmir.
         </span>
       </div>
+      {% endif %}
       <div class="field full">
-        <label for="pdf_desc">Qısa təsvir</label>
-        <input id="pdf_desc" name="description" type="text" placeholder="Kitab haqqında" />
+        <label for="edit_desc">Qısa təsvir</label>
+        <input id="edit_desc" name="description" type="text" value="{{ edit_book.description }}" />
       </div>
       <div class="field full">
-        <label for="pdf_topics">Mövzular (vergüllə)</label>
-        <input id="pdf_topics" name="topics" type="text" placeholder="hədis, əqidə" />
+        <label for="edit_topics">Mövzular (vergüllə)</label>
+        <input id="edit_topics" name="topics" type="text"
+               value="{% for t in edit_book.topics %}{{ t }}{% if not forloop.last %}, {% endif %}{% endfor %}" />
       </div>
-      <div class="field full">
-        <label for="pdf_toc">Mündəricat (başlıq + səhifə)</label>
-        <textarea id="pdf_toc" name="toc_text" rows="8" placeholder="Müqəddimə|3
-Birinci fəsil|12
-Ömər ibn əl-Xattab — Əməllər niyyətlərə görədir|15"></textarea>
-        <span class="muted" style="font-size:12px;display:block;margin-top:4px">
-          Hər sətirdə: <code>Başlıq|səhifə</code>. Boş buraxsanız sonra Fəsillər səhifəsindən yaza bilərsiniz. Avtomatik yaranmaz.
-        </span>
+      <div class="field">
+        <label for="edit_cover">Qapaq şəkli (ixtiyari)</label>
+        <input id="edit_cover" name="cover_image" type="file" accept="image/*" />
       </div>
       <div class="field">
         <label class="check">
-          <input type="checkbox" name="is_published" checked /> Yayınlı olsun
+          <input type="checkbox" name="is_published"{% if edit_book.is_published %} checked{% endif %} />
+          Yayınlı olsun
         </label>
       </div>
     </div>
     <div class="actions">
-      <button type="submit" class="btn">PDF əlavə et</button>
+      <button type="submit" class="btn">Yadda saxla</button>
+      <a class="btn" href="{% url 'panel-books' %}"
+         style="background:#eef1f6;color:var(--ink);text-decoration:none">Ləğv et</a>
+      {% if edit_book.format == 'pdf' %}
+      <a href="{% url 'panel-chapters' %}?book={{ edit_book.id }}">Mündəricat →</a>
+      {% else %}
+      <a href="{% url 'panel-chapters' %}?book={{ edit_book.id }}">Fəsillər →</a>
+      {% endif %}
     </div>
   </form>
+</section>
+{% endif %}
+
+<section class="books-create">
+  <div class="form-panel" id="yeni-kitab">
+    <h2>Mətn kitabı əlavə et</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create_book" />
+      <div class="form-grid">
+        <div class="field full">
+          <label for="book_title">Başlıq</label>
+          <input id="book_title" name="title" type="text" required placeholder="Kitab adı" />
+        </div>
+        <div class="field full">
+          <label for="book_cover">Qapaq şəkli</label>
+          <input id="book_cover" name="cover_image" type="file" accept="image/jpeg,image/png,image/webp,image/*" />
+        </div>
+        <div class="field">
+          <label for="book_author">Müəllif</label>
+          <input id="book_author" name="author" type="text" placeholder="Müəllif adı" />
+        </div>
+        <div class="field">
+          <label for="book_lang">Dil</label>
+          <select id="book_lang" name="language">
+            {% for code, label in language_choices %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field full">
+          <label for="book_desc">Qısa təsvir</label>
+          <input id="book_desc" name="description" type="text" placeholder="Kitab haqqında" />
+        </div>
+        <div class="field full">
+          <label for="book_topics">Mövzular (vergüllə)</label>
+          <input id="book_topics" name="topics" type="text" placeholder="əqidə, fiqh" />
+        </div>
+        <div class="field full">
+          <label class="check">
+            <input type="checkbox" name="is_published" checked /> Yayınlı olsun
+          </label>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn">Əlavə et</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="form-panel" id="yeni-pdf">
+    <h2>PDF kitab əlavə et</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create_pdf_book" />
+      <div class="form-grid">
+        <div class="field full">
+          <label for="pdf_title">Başlıq</label>
+          <input id="pdf_title" name="title" type="text" required placeholder="Kitab adı" />
+        </div>
+        <div class="field full">
+          <label for="pdf_file">PDF faylı</label>
+          <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf,.pdf" required />
+          <span class="muted" style="font-size:12px;display:block;margin-top:4px">Maks. ~200 MB</span>
+        </div>
+        <div class="field">
+          <label for="pdf_author">Müəllif</label>
+          <input id="pdf_author" name="author" type="text" placeholder="Müəllif adı" />
+        </div>
+        <div class="field">
+          <label for="pdf_lang">Dil</label>
+          <select id="pdf_lang" name="language">
+            {% for code, label in language_choices %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field full">
+          <label for="pdf_dir">Səhifə istiqaməti</label>
+          <select id="pdf_dir" name="page_direction">
+            {% for code, label in page_direction_choices %}
+            <option value="{{ code }}"{% if code == 'ltr' %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field full">
+          <label for="pdf_cover">Qapaq (ixtiyari)</label>
+          <input id="pdf_cover" name="cover_image" type="file" accept="image/*" />
+        </div>
+        <div class="field full">
+          <label for="pdf_toc">Mündəricat (ixtiyari)</label>
+          <textarea id="pdf_toc" name="toc_text" rows="6" placeholder="Müqəddimə|3
+Birinci fəsil|12
+İkinci fəsil|45"></textarea>
+          <span class="muted" style="font-size:12px;display:block;margin-top:4px">
+            Hər sətirdə <code>Başlıq|səhifə</code>. Sonra da «Mündəricat» düyməsindən düzəldə bilərsiniz.
+          </span>
+        </div>
+        <div class="field full">
+          <label class="check">
+            <input type="checkbox" name="is_published" checked /> Yayınlı olsun
+          </label>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn">PDF əlavə et</button>
+      </div>
+    </form>
+  </div>
 </section>
 
-<section class="form-panel">
-  <h2>JSON kitabları sinxron et</h2>
-  <p class="muted" style="margin:0 0 12px;font-size:13px">
-    <code>Sirac/assets/books/*.json</code> — paketdəki hazır kitabları DB-yə əlavə edir.
-  </p>
-  <form method="post">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="sync_bundled_books" />
-    <div class="field" style="margin-bottom:12px">
-      <label class="check">
-        <input type="checkbox" name="overwrite_chapters" />
-        Fəsil mətnlərini də JSON-dan yenilə (düzəlişlər silinər)
-      </label>
-    </div>
-    <div class="actions">
-      <button type="submit" class="btn">Sinxron et</button>
-    </div>
-  </form>
-</section>
+<details class="form-panel advanced-box">
+  <summary>Təkmil: paket JSON kitabları</summary>
+  <div class="inner">
+    <p class="muted" style="margin:0 0 12px;font-size:13px">
+      Bu, app-in içindəki hazır mətn kitablarını (<code>assets/books/*.json</code>)
+      bazaya köçürür. Adi PDF/mətn əlavə etmək üçün lazım deyil — yalnız ilk qurulumda
+      və ya paket kitablarını yeniləyəndə istifadə edin.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="sync_bundled_books" />
+      <div class="actions">
+        <label class="check" style="margin:0">
+          <input type="checkbox" name="overwrite_chapters" />
+          Fəsil mətnlərini də yenilə
+        </label>
+        <button type="submit" class="btn">Paket kitablarını köçür</button>
+      </div>
+    </form>
+  </div>
+</details>
 
 <section class="panel">
   <h2>Bütün kitablar</h2>
   {% if books_list %}
-  <table>
-    <thead>
-      <tr>
-        <th>Qapaq</th>
-        <th>Başlıq</th>
-        <th>Növ</th>
-        <th>İstiqamət</th>
-        <th>Müəllif</th>
-        <th>Fəsil</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for b in books_list %}
-      <tr>
-        <td>
-          {% if b.cover_image %}
-          <img src="{{ b.cover_image.url }}" alt="" style="width:42px;height:58px;object-fit:cover;border-radius:4px;border:1px solid var(--line)" />
-          {% else %}
-          <span class="muted" style="font-size:12px">—</span>
-          {% endif %}
-        </td>
-        <td>{{ b.title|truncatechars:60 }}</td>
-        <td>
-          {% if b.format == 'pdf' %}
-          <span class="badge" style="background:#e8f1fe;color:var(--blue)">PDF</span>
-          {% else %}
-          <span class="muted" style="font-size:12px">Mətn</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if b.format == 'pdf' %}
-          <form method="post" class="inline-form" style="display:inline-flex;align-items:center;gap:4px">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_page_direction" />
-            <input type="hidden" name="book_id" value="{{ b.id }}" />
-            <select name="page_direction" style="font-size:12px;max-width:130px"
-                    onchange="this.form.submit()">
-              {% for code, label in page_direction_choices %}
-              <option value="{{ code }}"{% if b.page_direction == code %} selected{% endif %}>
-                {% if code == 'rtl' %}RTL ←{% else %}LTR →{% endif %}
-              </option>
-              {% endfor %}
-            </select>
-          </form>
-          {% else %}
-          <span class="muted" style="font-size:12px">—</span>
-          {% endif %}
-        </td>
-        <td class="muted">{{ b.author|default:"—" }}</td>
-        <td class="muted">{% if b.format == 'pdf' %}—{% else %}{{ b.chapter_count }}{% endif %}</td>
-        <td>
-          {% if b.is_published %}<span class="badge">Yayınlı</span>
-          {% else %}<span class="badge off">Gizli</span>{% endif %}
-        </td>
-        <td>
-          {% if b.format != 'pdf' %}
-          <a href="{% url 'panel-chapters' %}?book={{ b.id }}">Fəsillər</a>
-          ·
-          {% else %}
-          <a href="{% url 'panel-chapters' %}?book={{ b.id }}">Mündəricat</a>
-          ·
-          {% if b.pdf_file %}
-          <a href="{{ b.pdf_file.url }}" target="_blank" rel="noopener">PDF</a>
-          ·
-          {% endif %}
-          {% endif %}          <form method="post" enctype="multipart/form-data" class="inline-form" style="display:inline-flex;align-items:center;gap:6px;margin:4px 0">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_book_cover" />
-            <input type="hidden" name="book_id" value="{{ b.id }}" />
-            <input type="file" name="cover_image" accept="image/*" style="max-width:140px;font-size:12px" />
-            <button type="submit" class="btn" style="padding:4px 8px;font-size:12px">Qapaq</button>
-          </form>
-          ·
-          <form method="post" class="inline-form">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="toggle_book" />
-            <input type="hidden" name="book_id" value="{{ b.id }}" />
-            <button type="submit" class="btn btn-danger" style="background:rgba(196,161,90,0.35);color:var(--text)">
-              {% if b.is_published %}Gizlət{% else %}Yayınla{% endif %}
-            </button>
-          </form>
-          ·
-          <form method="post" class="inline-form"
-                onsubmit="return confirm('«{{ b.title|escapejs }}» silinsin? Bütün fəsillər də silinəcək.');">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete_book" />
-            <input type="hidden" name="book_id" value="{{ b.id }}" />
-            <button type="submit" class="btn btn-danger">Sil</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="books-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Qapaq</th>
+          <th>Başlıq</th>
+          <th>Növ</th>
+          <th>İstiqamət</th>
+          <th>Müəllif</th>
+          <th>Fəsil</th>
+          <th>Status</th>
+          <th>Əməliyyat</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in books_list %}
+        <tr{% if edit_book and edit_book.id == b.id %} style="background:#eef5ff"{% endif %}>
+          <td>
+            {% if b.cover_image %}
+            <img src="{{ b.cover_image.url }}" alt="" width="42" height="58"
+                 style="width:42px;height:58px;object-fit:cover;border-radius:4px;border:1px solid var(--line)" />
+            {% else %}
+            <span class="muted" style="font-size:12px">—</span>
+            {% endif %}
+          </td>
+          <td class="book-meta-cell">{{ b.title|truncatechars:48 }}</td>
+          <td>
+            {% if b.format == 'pdf' %}
+            <span class="badge" style="background:#e8f1fe;color:var(--blue)">PDF</span>
+            {% else %}
+            <span class="muted" style="font-size:12px">Mətn</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if b.format == 'pdf' %}
+            <form method="post" class="inline-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update_page_direction" />
+              <input type="hidden" name="book_id" value="{{ b.id }}" />
+              <select class="dir-select" name="page_direction" onchange="this.form.submit()">
+                {% for code, label in page_direction_choices %}
+                <option value="{{ code }}"{% if b.page_direction == code %} selected{% endif %}>
+                  {% if code == 'rtl' %}RTL{% else %}LTR{% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </form>
+            {% else %}
+            <span class="muted">—</span>
+            {% endif %}
+          </td>
+          <td class="muted book-meta-cell">{{ b.author|default:"—"|truncatechars:24 }}</td>
+          <td class="muted">{% if b.format == 'pdf' %}—{% else %}{{ b.chapter_count }}{% endif %}</td>
+          <td>
+            {% if b.is_published %}<span class="badge">Yayınlı</span>
+            {% else %}<span class="badge off">Gizli</span>{% endif %}
+          </td>
+          <td class="col-actions">
+            <div class="book-actions">
+              <a class="btn-sm" href="{% url 'panel-books' %}?edit={{ b.id }}#edit-kitab">Redaktə</a>
+              {% if b.format == 'pdf' %}
+              <a class="btn-sm" href="{% url 'panel-chapters' %}?book={{ b.id }}">Mündəricat</a>
+              {% else %}
+              <a class="btn-sm" href="{% url 'panel-chapters' %}?book={{ b.id }}">Fəsillər</a>
+              {% endif %}
+              <form method="post" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_book" />
+                <input type="hidden" name="book_id" value="{{ b.id }}" />
+                <button type="submit" class="btn btn-sm"
+                        style="background:rgba(196,161,90,0.35);color:var(--text)">
+                  {% if b.is_published %}Gizlət{% else %}Yayınla{% endif %}
+                </button>
+              </form>
+              <form method="post" class="inline-form"
+                    onsubmit="return confirm('«{{ b.title|escapejs }}» silinsin?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_book" />
+                <input type="hidden" name="book_id" value="{{ b.id }}" />
+                <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
   <p class="empty">Kitab yoxdur — yuxarıdan əlavə edin.</p>
   {% endif %}
 </section>
+
 <script>
 (function () {
   var lang = document.getElementById('pdf_lang');

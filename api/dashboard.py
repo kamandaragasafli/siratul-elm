@@ -578,6 +578,78 @@ def _handle_update_book_cover(request):
     return None
 
 
+def _handle_update_book(request):
+    book_id = (request.POST.get('book_id') or '').strip()
+    book = Book.objects.filter(pk=book_id).first() if book_id.isdigit() else None
+    if not book:
+        return 'Kitab tapılmadı.'
+
+    title = (request.POST.get('title') or '').strip()
+    if not title:
+        return 'Kitab başlığı lazımdır.'
+
+    author = (request.POST.get('author') or '').strip()
+    description = (request.POST.get('description') or '').strip()
+    language = (request.POST.get('language') or book.language or 'az').strip()[:8]
+    if language not in ('az', 'ar', 'en'):
+        language = 'az'
+    topics_raw = (request.POST.get('topics') or '').strip()
+    topics = [t.strip() for t in topics_raw.split(',') if t.strip()][:20]
+    published = request.POST.get('is_published') == 'on'
+
+    book.title = title
+    book.author = author
+    book.description = description
+    book.language = language
+    book.topics = topics
+    book.is_published = published
+    update_fields = [
+        'title',
+        'author',
+        'description',
+        'language',
+        'topics',
+        'is_published',
+        'updated_at',
+    ]
+
+    if book.format == 'pdf':
+        direction = _parse_page_direction(request.POST.get('page_direction'), language)
+        book.page_direction = direction
+        update_fields.append('page_direction')
+
+    cover = request.FILES.get('cover_image')
+    if cover:
+        if not (cover.content_type or '').startswith('image/'):
+            return 'Qapaq yalnız şəkil faylı ola bilər (JPG, PNG, WebP).'
+        book.cover_image = cover
+        update_fields.append('cover_image')
+
+    pdf = request.FILES.get('pdf_file')
+    if pdf and book.format == 'pdf':
+        name = (pdf.name or '').lower()
+        ctype = (pdf.content_type or '').lower()
+        if not (name.endswith('.pdf') or 'pdf' in ctype):
+            return 'Yalnız PDF faylı yükləyin.'
+        book.pdf_file = pdf
+        update_fields.append('pdf_file')
+
+    book.save(update_fields=update_fields)
+
+    if book.format == 'pdf':
+        toc_raw = (request.POST.get('toc_text') or '').strip()
+        if toc_raw:
+            toc = _parse_toc_lines(toc_raw)
+            if not toc:
+                return 'Mündəricat formatı yanlışdır. Nümunə: Başlıq|səhifə'
+            n = _replace_pdf_toc(book, toc)
+            messages.success(request, f'«{book.title}» yeniləndi · mündəricat: {n} başlıq')
+            return None
+
+    messages.success(request, f'«{book.title}» yeniləndi.')
+    return None
+
+
 def _handle_update_page_direction(request):
     book_id = (request.POST.get('book_id') or '').strip()
     book = Book.objects.filter(pk=book_id).first() if book_id.isdigit() else None
@@ -701,6 +773,10 @@ def panel_books(request):
             form_error = _handle_update_book_cover(request)
             if not form_error:
                 return redirect('panel-books')
+        elif action == 'update_book':
+            form_error = _handle_update_book(request)
+            if not form_error:
+                return redirect('panel-books')
         elif action == 'update_page_direction':
             form_error = _handle_update_page_direction(request)
             if not form_error:
@@ -716,6 +792,15 @@ def panel_books(request):
     )
     ctx['language_choices'] = Book.LANGUAGE_CHOICES
     ctx['page_direction_choices'] = Book.PAGE_DIRECTION_CHOICES
+    edit_id = (request.GET.get('edit') or '').strip()
+    edit_book = Book.objects.filter(pk=edit_id).first() if edit_id.isdigit() else None
+    ctx['edit_book'] = edit_book
+    edit_toc_lines: list[str] = []
+    if edit_book and edit_book.format == 'pdf':
+        for ch in Chapter.objects.filter(book=edit_book).order_by('order', 'id'):
+            page = _chapter_pdf_page(ch) or 1
+            edit_toc_lines.append(f'{ch.title}|{page}')
+    ctx['edit_toc_lines'] = edit_toc_lines
     return render(request, 'api/panel/books.html', ctx)
 
 
