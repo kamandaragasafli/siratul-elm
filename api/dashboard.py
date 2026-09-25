@@ -4,7 +4,7 @@ import re
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -111,6 +111,10 @@ def _stats():
     series = VideoSeries.objects.all()
     lessons = VideoLesson.objects.all()
     support = SupportMessage.objects.all()
+    # Saxlanmış MP3 və ya ixlasla remote_audio_url — hər ikisi səsli sayılır
+    lessons_with_audio = lessons.filter(
+        Q(audio_file__gt='') | Q(remote_audio_url__gt='')
+    ).count()
     return {
         'books': books.count(),
         'books_published': books.filter(is_published=True).count(),
@@ -121,7 +125,7 @@ def _stats():
         'series_published': series.filter(is_published=True).count(),
         'lessons': lessons.count(),
         'lessons_published': lessons.filter(is_published=True).count(),
-        'lessons_with_audio': lessons.exclude(audio_file='').exclude(audio_file=None).count(),
+        'lessons_with_audio': lessons_with_audio,
         'support': support.count(),
         'support_unread': support.filter(is_read=False).count(),
     }
